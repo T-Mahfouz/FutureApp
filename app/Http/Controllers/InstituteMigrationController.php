@@ -7,6 +7,7 @@ use App\Models\OldInstitute;
 use App\Models\Service;
 use App\Models\Category;
 use App\Models\Media;
+use App\Models\ServiceCategory;
 use App\Models\ServicePhone;
 use App\Models\Rate;
 use App\Models\OldInstituteImage;
@@ -27,8 +28,10 @@ class InstituteMigrationController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function migrateInstitutes(Request $request)
+    public function parents(Request $request)
     {
+         ini_set('max_execution_time', 1500);
+
         // Optional parameters
         $limit = $request->get('limit', 100);
         $offset = $request->get('offset', 0);
@@ -37,17 +40,10 @@ class InstituteMigrationController extends Controller
         try {
             DB::beginTransaction();
             
-            // Build query with optional filters
-            $query = OldInstitute::query();
+            $institutes = OldInstitute::whereNull('institute_id')->get();
             
-            if ($cityId) {
-                $query->where('city_id', $cityId);
-            }
-            
-            $institutes = $query->skip($offset)->take($limit)->get();
-            $migratedCount = 0;
             $errors = [];
-            
+            $migratedCount = 0;
             foreach ($institutes as $institute) {
                 try {
                     $this->migrateInstitute($institute);
@@ -82,6 +78,106 @@ class InstituteMigrationController extends Controller
         }
     }
     
+    public function children(Request $request)
+    {
+         ini_set('max_execution_time', 1500);
+
+        // Optional parameters
+        $limit = $request->get('limit', 100);
+        $offset = $request->get('offset', 0);
+        $cityId = $request->get('city_id');
+        
+        try {
+            DB::beginTransaction();
+            
+            $institutes = OldInstitute::whereNotNull('institute_id')->get();
+            
+            $errors = [];
+            $migratedCount = 0;
+            foreach ($institutes as $institute) {
+                try {
+                    $this->migrateInstitute($institute);
+                    $migratedCount++;
+                } catch (\Exception $e) {
+                    $errors[] = [
+                        'institute_id' => $institute->id,
+                        'error' => $e->getMessage()
+                    ];
+                    Log::error("Error migrating institute ID {$institute->id}: " . $e->getMessage());
+                }
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'total_processed' => $institutes->count(),
+                'successfully_migrated' => $migratedCount,
+                'errors' => $errors
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error("Migration process failed: " . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => "Migration failed: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function remains(Request $request)
+    {
+         ini_set('max_execution_time', 1500);
+
+        // Optional parameters
+        $limit = $request->get('limit', 100);
+        $offset = $request->get('offset', 0);
+        $cityId = $request->get('city_id');
+        
+        try {
+            DB::beginTransaction();
+            
+            $institutes = OldInstitute::whereNull('institute_id')->get();
+            
+            
+            $errors = [];
+            $migratedCount = 0;
+            foreach ($institutes as $institute) {
+                try {
+                    $this->migrateInstitute($institute);
+                    $migratedCount++;
+                } catch (\Exception $e) {
+                    $errors[] = [
+                        'institute_id' => $institute->id,
+                        'error' => $e->getMessage()
+                    ];
+                    Log::error("Error migrating institute ID {$institute->id}: " . $e->getMessage());
+                }
+            }
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'total_processed' => $institutes->count(),
+                'successfully_migrated' => $migratedCount,
+                'errors' => $errors
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error("Migration process failed: " . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => "Migration failed: " . $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Migrate a single institute to a service
      * 
@@ -91,28 +187,23 @@ class InstituteMigrationController extends Controller
     protected function migrateInstitute(OldInstitute $institute)
     {
         // Check if this institute was already migrated
-        $existingService = Service::where('name', $institute->name)
-            ->where('city_id', $this->mapCityId($institute->city_id))
-            ->first();
+        $existingService = Service::where('id', $institute->id)->first();
             
         if ($existingService) {
             return $existingService;
         }
         
-        // Map the city ID from old system to new system
-        $newCityId = $this->mapCityId($institute->city_id);
-        
-        // If we couldn't find a valid city ID, throw an exception
-        if (!$newCityId) {
-            throw new \Exception("No matching city found for old city ID: {$institute->city_id}");
+        if ($institute->basic_image) {
+            $media = $this->createMedia($institute->basic_image);
         }
-        
+
         // Create the service
         $service = new Service();
         $service->id = $institute->id;
+        $service->parent_id = $institute->institute_id;
         $service->name = $institute->name;
-        $service->city_id = $newCityId;
-        $service->brief_description = $institute->brief ?? '';
+        $service->city_id = $institute->city_id;
+        $service->brief_description = $institute->brief_description ?? '';
         $service->description = $institute->description ?? '';
         $service->lat = $institute->lat;
         $service->lon = $institute->lon;
@@ -121,40 +212,13 @@ class InstituteMigrationController extends Controller
         $service->facebook = $institute->facebook ?? '';
         $service->instagram = $institute->instagram ?? '';
         $service->telegram = $institute->telegram ?? '';
-        $service->valid = $institute->active ?? 1;
-        $service->arrangement_order = $institute->arrangement_order ?? 1;
-        // $service = new Service([
-        //     'name' => $institute->name,
-        //     'city_id' => $newCityId,
-        //     'brief_description' => $institute->brief ?? '',
-        //     'description' => $institute->description ?? '',
-        //     'lat' => $institute->lat,
-        //     'lon' => $institute->lon,
-        //     'website' => $institute->website ?? '',
-        //     'youtube' => $institute->youtube ?? '',
-        //     'facebook' => $institute->facebook ?? '',
-        //     'instagram' => $institute->instagram ?? '',
-        //     'telegram' => $institute->telegram ?? '',
-        //     'phone' => $institute->phone ?? '',
-        //     'valid' => $institute->active ?? 1,
-        //     'arrangement_order' => $institute->arrangement_order ?? 1,
-        // ]);
-        
-        // Migrate main image if exists
-        if ($institute->image) {
-            $media = $this->migrateImage($institute->image);
-            if ($media) {
-                $service->image_id = $media->id;
-            }
-        }
-        
+        $service->valid = $institute->valid ;
+        $service->image_id = $media->id ?? null;
+        $service->arrangement_order = $institute->arrange_order;
         $service->save();
         
         // Migrate categories
         $this->migrateCategories($institute, $service);
-        
-        // Migrate additional images
-        $this->migrateAdditionalImages($institute, $service);
         
         // Migrate additional phone numbers
         $this->migratePhones($institute, $service);
@@ -173,21 +237,17 @@ class InstituteMigrationController extends Controller
      */
     protected function migrateCategories(OldInstitute $institute, Service $service)
     {
-        // Get mapped city ID
-        $newCityId = $this->mapCityId($institute->city_id);
-        
-        // Main category
         if ($institute->category_id) {
-            $category = Category::where('name', optional($institute->mainCategory)->name)
-                ->where('city_id', $newCityId)
-                ->first();
-                
+            $category = Category::where('id', $institute->category_id)->first();
+                            
             if ($category) {
-                $service->categories()->attach($category->id);
+                ServiceCategory::create([
+                    'service_id' => $service->id,	
+                    'category_id' => $category->id,
+                ]);
             }
         }
         
-        // Additional categories
         $instituteCategories = OldInstituteCategory::where('institute_id', $institute->id)->get();
         
         foreach ($instituteCategories as $instituteCategory) {
@@ -197,63 +257,15 @@ class InstituteMigrationController extends Controller
                 continue;
             }
             
-            $category = Category::where('name', $oldCategory->name)
-                ->where('city_id', $newCityId)
-                ->first();
+            $category = Category::where('id', $oldCategory->id)->first();
                 
             if ($category && !$service->categories->contains($category->id)) {
-                $service->categories()->attach($category->id);
+                ServiceCategory::create([
+                    'service_id' => $service->id,	
+                    'category_id' => $category->id,
+                ]);
             }
         }
-    }
-    
-    /**
-     * Migrate additional images from old institute to new service
-     * 
-     * @param OldInstitute $institute
-     * @param Service $service
-     */
-    protected function migrateAdditionalImages(OldInstitute $institute, Service $service)
-    {
-        $instituteImages = OldInstituteImage::where('institute_id', $institute->id)->get();
-        
-        foreach ($instituteImages as $instituteImage) {
-            $media = $this->migrateImage($instituteImage->path);
-            
-            if ($media) {
-                $service->images()->attach($media->id);
-            }
-        }
-    }
-    
-    /**
-     * Migrate image and create Media record
-     * 
-     * @param string $imagePath
-     * @return Media|null
-     */
-    protected function migrateImage($imagePath)
-    {
-        if (!$imagePath) {
-            return null;
-        }
-        
-        // Check if media already exists
-        $existingMedia = Media::where('path', $imagePath)->first();
-        
-        if ($existingMedia) {
-            return $existingMedia;
-        }
-        
-        // Create new media record
-        $media = new Media([
-            'path' => $imagePath,
-            'type' => 'image'
-        ]);
-        
-        $media->save();
-        
-        return $media;
     }
     
     /**

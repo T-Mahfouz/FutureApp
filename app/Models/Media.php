@@ -9,10 +9,7 @@ class Media extends Model
 {
     use HasFactory;
     
-    protected $fillable = [
-        'path',
-        'type',
-    ];
+    protected $guarded = ['id'];
 
     protected $attributes = [
         'type' => 'image',

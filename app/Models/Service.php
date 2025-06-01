@@ -9,24 +9,7 @@ class Service extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'phone',
-        'city_id',
-        'image_id',
-        'name',
-        'brief_description',
-        'description',
-        'lat',
-        'lon',
-        'website',
-        'youtube',
-        'facebook',
-        'instagram',
-        'telegram',
-        'video_link',
-        'valid',
-        'arrangement_order',
-    ];
+    protected $guarded = [];
 
     protected $attributes = [
         'valid' => 1,
@@ -76,5 +59,10 @@ class Service extends Model
     public function averageRating()
     {
         return $this->rates()->avg('rate');
+    }
+
+    public function allMedia()
+    {
+        return $this->hasMany(ServiceImage::class, 'service_id');
     }
 }

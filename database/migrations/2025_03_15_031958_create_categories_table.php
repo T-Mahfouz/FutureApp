@@ -17,6 +17,8 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->unsignedBigInteger('image_id')->nullable();
+            $table->boolean('active')->default(1);
+            $table->text('description')->nullable();
             $table->foreign('parent_id')->on('categories')->references('id')->onDelete('set null');
             $table->foreign('city_id')->on('cities')->references('id')->onDelete('set null');
             $table->foreign('image_id')->on('media')->references('id')->onDelete('set null');

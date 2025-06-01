@@ -8,13 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Rate extends Model
 {
     use HasFactory;
-
-
-    protected $fillable = [
-        'user_id',
-        'service_id',
-        'rate',
-    ];
+    
+    protected $guarded = [];
 
     protected $attributes = [
         'rate' => 5,

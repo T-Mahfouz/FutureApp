@@ -8,12 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Setting extends Model
 {
     use HasFactory;
-
-    protected $fillable = [
-        'city_id',
-        'key',
-        'value',
-    ];
+    protected $guarded = ['id'];
 
     public function city()
     {

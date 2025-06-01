@@ -38,6 +38,11 @@ class City extends Model
         return $this->hasMany(Ad::class);
     }
 
+    public function contacts()
+    {
+        return $this->hasMany(Contact::class, 'city_id');
+    }
+
     public function contactUs()
     {
         return $this->hasMany(ContactUs::class);

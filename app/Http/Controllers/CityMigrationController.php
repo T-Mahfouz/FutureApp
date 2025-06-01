@@ -29,12 +29,12 @@ class CityMigrationController extends Controller
             $oldCities = OldCity::with([
                 'config',
                 'categories',
-                'institutes',
-                'news',
-                'news.images',
-                'contacts',
-                'contactus',
-                'admins'
+                // 'institutes',
+                // 'news',
+                // 'news.images',
+                // 'contacts',
+                // 'contactus',
+                // 'admins'
             ])->get();
             
             $migrationResults = [
@@ -211,16 +211,16 @@ class CityMigrationController extends Controller
             $newCity->name = $oldCity->name;
             
             // Handle city image if exists
-            if ($oldCity->image_path) {
+            if ($oldCity->image) {
                 try {
-                    $media = $this->createMedia($oldCity->image_path);
+                    $media = $this->createMedia($oldCity->image);
                     if ($media) {
                         $newCity->image_id = $media->id;
                     }
                 } catch (\Exception $e) {
                     Log::warning('Failed to create media for city image', [
                         'city_id' => $oldCity->id,
-                        'image_path' => $oldCity->image_path,
+                        'image_path' => $oldCity->image,
                         'error' => $e->getMessage()
                     ]);
                 }
@@ -249,27 +249,28 @@ class CityMigrationController extends Controller
             
             // Migrate categories
             try {
-                $categoryMap = $this->migrateCategories($oldCity, $newCity);
-                $stats['categories'] = count($categoryMap);
+                $contactsMap = $this->migrateContacts($oldCity, $newCity);
+                $stats['contacts'] = $contactsMap;
             } catch (\Exception $e) {
                 Log::error('Failed to migrate categories', [
                     'city_id' => $oldCity->id,
                     'error' => $e->getMessage()
                 ]);
-                $categoryMap = [];
+                $contactsMap = [];
             }
             
+            
             // Migrate institutes to services
-            try {
-                $serviceMap = $this->migrateInstitutesToServices($oldCity, $newCity, $categoryMap);
-                $stats['services'] = count($serviceMap);
-            } catch (\Exception $e) {
-                Log::error('Failed to migrate institutes to services', [
-                    'city_id' => $oldCity->id,
-                    'error' => $e->getMessage()
-                ]);
-                $serviceMap = [];
-            }
+            // try {
+            //     $serviceMap = $this->migrateInstitutesToServices($oldCity, $newCity, $categoryMap);
+            //     $stats['services'] = count($serviceMap);
+            // } catch (\Exception $e) {
+            //     Log::error('Failed to migrate institutes to services', [
+            //         'city_id' => $oldCity->id,
+            //         'error' => $e->getMessage()
+            //     ]);
+            //     $serviceMap = [];
+            // }
             
             // Migrate news
             try {
@@ -473,9 +474,9 @@ class CityMigrationController extends Controller
                 try {
                     // Create new service
                     $imageId = null;
-                    if ($oldInstitute->image_path) {
+                    if ($oldInstitute->basic_image) {
                         try {
-                            $media = $this->createMedia($oldInstitute->image_path);
+                            $media = $this->createMedia($oldInstitute->basic_image);
                             if ($media) {
                                 $imageId = $media->id;
                             }
@@ -549,11 +550,12 @@ class CityMigrationController extends Controller
                     // Migrate service images
                     try {
                         foreach ($oldInstitute->images as $oldImage) {
+
                             if ($oldImage->path) {
                                 try {
                                     $media = $this->createMedia($oldImage->path);
                                     if ($media) {
-                                        $newService->images()->attach($media->id);
+                                        $newService->allMedia()->create($media->id);
                                     }
                                 } catch (\Exception $e) {
                                     Log::warning('Failed to create media for service image', [
@@ -628,16 +630,16 @@ class CityMigrationController extends Controller
                 try {
                     // Handle main news image
                     $imageId = null;
-                    if ($oldNews->image_path) {
+                    if ($oldNews->image) {
                         try {
-                            $media = $this->createMedia($oldNews->image_path);
+                            $media = $this->createMedia($oldNews->image);
                             if ($media) {
                                 $imageId = $media->id;
                             }
                         } catch (\Exception $e) {
                             Log::warning('Failed to create media for news image', [
                                 'news_id' => $oldNews->id,
-                                'image_path' => $oldNews->image_path,
+                                'image' => $oldNews->image,
                                 'error' => $e->getMessage()
                             ]);
                         }
@@ -655,16 +657,16 @@ class CityMigrationController extends Controller
                     // Migrate news images
                     try {
                         foreach ($oldNews->images as $oldImage) {
-                            if ($oldImage->path) {
+                            if ($oldImage->image) {
                                 try {
-                                    $media = $this->createMedia($oldImage->path);
+                                    $media = $this->createMedia($oldImage->image);
                                     if ($media) {
                                         $newNews->images()->attach($media->id);
                                     }
                                 } catch (\Exception $e) {
                                     Log::warning('Failed to create media for news additional image', [
                                         'news_id' => $oldNews->id,
-                                        'image_path' => $oldImage->path,
+                                        'image_path' => $oldImage->image,
                                         'error' => $e->getMessage()
                                     ]);
                                 }
@@ -717,6 +719,36 @@ class CityMigrationController extends Controller
                         'name' => $oldContact->name,
                         'phone' => $oldContact->phone,
                         'message' => $oldContact->message
+                    ]);
+                    $contactCount++;
+                } catch (\Exception $e) {
+                    Log::warning('Failed to migrate contact us item', [
+                        'contact_id' => $oldContact->id ?? 'unknown',
+                        'contact_name' => $oldContact->name ?? 'unknown',
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to migrate contact us data', [
+                'city_id' => $oldCity->id,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+        
+        return $contactCount;
+    }
+    private function migrateContacts(OldCity $oldCity, City $newCity)
+    {
+        $contactCount = 0;
+        
+        try {
+            foreach ($oldCity->contacts as $oldContact) {
+                try {
+                    $newCity->contacts()->create([
+                        'name' => $oldContact->name,
+                        'value' => $oldContact->value,
                     ]);
                     $contactCount++;
                 } catch (\Exception $e) {

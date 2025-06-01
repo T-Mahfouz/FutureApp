@@ -4,9 +4,12 @@ use App\Http\Controllers\AdMigrationController;
 use App\Http\Controllers\AdminMigrationController;
 use App\Http\Controllers\API\AdController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\CategoryMigrationController;
 use App\Http\Controllers\CityMigrationController;
 use App\Http\Controllers\InstituteMigrationController;
 use App\Http\Controllers\NotificationMigrationController;
+use App\Http\Controllers\ServiceImagesMigrationController;
+use App\Http\Controllers\SettingsMigrationController;
 use App\Http\Controllers\UserMigrationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -87,10 +90,13 @@ Route::middleware(['auth:api', 'active:api'])->group(function () {
 
 
 Route::prefix('migration')->group(function () {
-    Route::post('/institutes', [InstituteMigrationController::class, 'migrateInstitutes']);
+    Route::post('/institutes/parents', [InstituteMigrationController::class, 'parents']);
+    Route::post('/institutes/children', [InstituteMigrationController::class, 'children']);
+    Route::post('/institutes/remains', [InstituteMigrationController::class, 'remains']);
     Route::get('/institutes/status', [InstituteMigrationController::class, 'getMigrationStatus']);
     Route::post('/institutes/reset', [InstituteMigrationController::class, 'resetMigration']);
-
+    
+    
 
     Route::post('/cities', [CityMigrationController::class, 'migrateAllCities']);
     Route::get('/users/status', [CityMigrationController::class, 'getMigrationStatus']);
@@ -116,4 +122,14 @@ Route::prefix('migration')->group(function () {
     Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
     Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
     Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
+
+
+
+
+
+
+    Route::post('/images', [ServiceImagesMigrationController::class, 'migrateServiceImages']);
+    Route::post('/categories/prents', [CategoryMigrationController::class, 'migrateParents']);
+    Route::post('/categories/children', [CategoryMigrationController::class, 'migrateChildren']);
+    Route::post('/settings/aboutus', [SettingsMigrationController::class, 'migrateAboutUs']);
 });

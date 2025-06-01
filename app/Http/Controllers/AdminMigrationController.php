@@ -154,8 +154,8 @@ class AdminMigrationController extends Controller
             
             // Handle admin profile image if exists
             $imageId = null;
-            if ($oldAdmin->image_path) {
-                $media = $this->createOrGetMedia($oldAdmin->image_path);
+            if ($oldAdmin->image) {
+                $media = $this->createMedia($oldAdmin->image);
                 $imageId = $media->id;
             }
             
@@ -165,18 +165,11 @@ class AdminMigrationController extends Controller
             $newAdmin->name = $oldAdmin->name ?? '';
             $newAdmin->email = $oldAdmin->email ?? '';
             
-            // Handle password
-            if (Hash::needsRehash($oldAdmin->password)) {
-                $tempPassword = Str::random(12);
-                $newAdmin->password = Hash::make($tempPassword);
-                
-                // Here you would notify the admin of their new password if needed
-                // Mail::to($newAdmin->email)->send(new TemporaryPasswordMail($tempPassword));
-            } else {
-                $newAdmin->password = $oldAdmin->password;
-            }
-            
+            $newAdmin->password = $oldAdmin->password;
             $newAdmin->image_id = $imageId;
+            $newAdmin->phone = $oldAdmin->phone;
+            $newAdmin->status = $oldAdmin->status;
+            $newAdmin->last_seen = $oldAdmin->last_seen;
             $newAdmin->email_verified_at = $oldAdmin->email_verified_at;
             $newAdmin->remember_token = $oldAdmin->remember_token;
             $newAdmin->created_at = $oldAdmin->created_at;
@@ -238,26 +231,5 @@ class AdminMigrationController extends Controller
                 'admin_id' => $oldAdmin->id
             ]);
         }
-    }
-    
-    /**
-     * Create or get existing media
-     *
-     * @param string $path
-     * @return Media
-     */
-    private function createOrGetMedia($path)
-    {
-        // Check if media with this path already exists
-        $media = Media::where('path', $path)->first();
-        
-        if (!$media) {
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
-        }
-        
-        return $media;
     }
 }

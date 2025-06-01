@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     public function service()
     {

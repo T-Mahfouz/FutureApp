@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ServiceImage extends Model
 {
-    protected $guarded = ['id'];
+    protected $guarded = [];
 
     public function service()
     {

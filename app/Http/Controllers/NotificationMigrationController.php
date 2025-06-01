@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\City;
+use App\Models\NotificationCity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -203,10 +205,7 @@ class NotificationMigrationController extends Controller
     private function migrateNotification(OldNotification $oldNotification)
     {
         try {
-            // Check if notification already exists (based on title and creation date)
-            $existingNotification = Notification::where('title', $oldNotification->title)
-                ->where('created_at', $oldNotification->created_at)
-                ->first();
+            $existingNotification = Notification::where('id', $oldNotification->id)->first();
                 
             if ($existingNotification) {
                 return [
@@ -219,11 +218,7 @@ class NotificationMigrationController extends Controller
             // Find related service (if applicable)
             $serviceId = null;
             if ($oldNotification->institute_id) {
-                $service = DB::table('services')
-                    ->where('name', DB::table('old_institutes')
-                        ->where('id', $oldNotification->institute_id)
-                        ->value('name')
-                    )
+                $service = DB::table('services')->where('id', $oldNotification->institute_id)
                     ->first();
                 
                 if ($service) {
@@ -234,12 +229,7 @@ class NotificationMigrationController extends Controller
             // Find related news (if applicable)
             $newsId = null;
             if ($oldNotification->news_id) {
-                $news = DB::table('news')
-                    ->where('name', DB::table('old_news')
-                        ->where('id', $oldNotification->news_id)
-                        ->value('title')
-                    )
-                    ->first();
+                $news = DB::table('news')->where('id', $oldNotification->news_id)->first();
                 
                 if ($news) {
                     $newsId = $news->id;
@@ -248,15 +238,16 @@ class NotificationMigrationController extends Controller
             
             // Handle notification image if exists
             $imageId = null;
-            if (!empty($oldNotification->image_path)) {
-                $media = $this->createOrGetMedia($oldNotification->image_path);
+            if (!empty($oldNotification->image)) {
+                $media = $this->createMedia($oldNotification->image);
                 $imageId = $media->id;
             }
             
             // Create the new notification
             $newNotification = new Notification();
-            $newNotification->title = $oldNotification->title ?? '';
-            $newNotification->body = $oldNotification->body ?? '';
+            $newNotification->id = $oldNotification->id;
+            $newNotification->title = $oldNotification->title;
+            $newNotification->body = $oldNotification->body;
             $newNotification->service_id = $serviceId;
             $newNotification->news_id = $newsId;
             $newNotification->image_id = $imageId;
@@ -264,6 +255,8 @@ class NotificationMigrationController extends Controller
             $newNotification->updated_at = $oldNotification->updated_at;
             $newNotification->save();
             
+            $this->migrateNotificationCities($newNotification, $oldNotification);
+
             return [
                 'success' => true,
                 'notification_id' => [
@@ -290,25 +283,20 @@ class NotificationMigrationController extends Controller
             ];
         }
     }
-    
-    /**
-     * Create or get existing media
-     *
-     * @param string $path
-     * @return Media
-     */
-    private function createOrGetMedia($path)
+
+
+    private function migrateNotificationCities(Notification $notification, OldNotification $oldNotification)
     {
-        // Check if media with this path already exists
-        $media = Media::where('path', $path)->first();
-        
-        if (!$media) {
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
+        if ($oldNotification->cities) {
+            foreach ($oldNotification->cities as $city)
+            {
+                if (City::find($city->city_id)) {
+                    NotificationCity::create([
+                        'notification_id' => $notification->id,
+                        'city_id' => $city->city_id
+                    ]);
+                }
+            }
         }
-        
-        return $media;
     }
 }

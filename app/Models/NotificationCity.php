@@ -4,16 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class AdminCity extends Model
+class NotificationCity extends Model
 {
     protected $guarded = [];
 
-    public function admin()
+    public function Notification()
     {
-        return $this->belongsTo(Admin::class);
+        return $this->belongsTo(Notification::class);
     }
 
-    public function city()
+    public function City()
     {
         return $this->belongsTo(City::class);
     }
