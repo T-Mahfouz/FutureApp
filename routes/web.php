@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminsController;
+use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\UserController;
@@ -48,6 +49,15 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/admins/{admin}', [AdminsController::class, 'edit'])->name('admin.edit');
     Route::patch('/admins/{admin}', [AdminsController::class, 'update'])->name('admin.update');
     Route::delete('/admins/{admin}', [AdminsController::class, 'destroy'])->name('admin.destroy');
+
+    // Cities
+    Route::get('/cities', [CityController::class, 'index'])->name('city.index');
+    Route::get('/cities/create', [CityController::class, 'create'])->name('city.create');
+    Route::post('/cities/create', [CityController::class, 'store'])->name('city.store');
+    Route::get('/cities/{city}', [CityController::class, 'show'])->name('city.show');
+    Route::get('/cities/{city}/edit', [CityController::class, 'edit'])->name('city.edit');
+    Route::patch('/cities/{city}', [CityController::class, 'update'])->name('city.update');
+    Route::delete('/cities/{city}', [CityController::class, 'destroy'])->name('city.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -48,6 +48,37 @@
   <!-- End Admins -->
   
   <!-- Title -->
+  <li class="sidebar-heading h6">Content Management</li>
+  <!-- End Title -->
+  
+  <!-- Cities -->
+  <li class="side-nav-menu-item side-nav-has-menu {{ Request::is('city*') ? 'active' : '' }}">
+	<a class="side-nav-menu-link media align-items-center" href="#"
+	   data-target="#subCities">
+	  <span class="side-nav-menu-icon d-flex mr-3">
+		<i class="gd-location"></i>
+	  </span>
+	  <span class="side-nav-fadeout-on-closed media-body">Cities</span>
+	  <span class="side-nav-control-icon d-flex">
+		<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+	  </span>
+	  <span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+	</a>
+
+	<!-- Cities: sub -->
+	<ul id="subCities" class="side-nav-menu side-nav-menu-second-level mb-0">
+	  <li class="side-nav-menu-item {{ Request::is('city') && !Request::is('city/create') ? 'active' : '' }}">
+		<a class="side-nav-menu-link" href="{{ route('city.index') }}">All Cities</a>
+	  </li>
+	  <li class="side-nav-menu-item {{ Request::is('city/create') ? 'active' : '' }}">
+		<a class="side-nav-menu-link" href="{{ route('city.create') }}">Add City</a>
+	  </li>
+	</ul>
+	<!-- Cities: sub -->
+  </li>
+  <!-- End Cities -->
+  
+  <!-- Title -->
   <li class="sidebar-heading h6">Users</li>
   <!-- End Title -->
   

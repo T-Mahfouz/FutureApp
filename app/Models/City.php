@@ -48,6 +48,11 @@ class City extends Model
         return $this->hasMany(ContactUs::class);
     }
 
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function image()
     {
         return $this->belongsTo(Media::class, 'image_id');
