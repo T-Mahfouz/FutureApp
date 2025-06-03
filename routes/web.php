@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminsController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -69,6 +70,17 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::patch('/services/{service}', [ServiceController::class, 'update'])->name('service.update');
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
+
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'index'])->name('category.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('category.create');
+    Route::post('/categories/create', [CategoryController::class, 'store'])->name('category.store');
+    Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('category.show');
+    Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('category.edit');
+    Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('category.update');
+    Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('category.toggle-status');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
+    Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

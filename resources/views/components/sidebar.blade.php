@@ -136,6 +136,33 @@
   </li>
   <!-- End Users -->
   
+  <!-- Categories -->
+  <li class="side-nav-menu-item side-nav-has-menu {{ Request::is('category*') || Request::is('categories*') ? 'active' : '' }}">
+	<a class="side-nav-menu-link media align-items-center" href="#"
+	   data-target="#subCategories">
+	  <span class="side-nav-menu-icon d-flex mr-3">
+		<i class="gd-bookmark"></i>
+	  </span>
+	  <span class="side-nav-fadeout-on-closed media-body">Categories</span>
+	  <span class="side-nav-control-icon d-flex">
+		<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+	  </span>
+	  <span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+	</a>
+
+	<!-- Categories: sub -->
+	<ul id="subCategories" class="side-nav-menu side-nav-menu-second-level mb-0">
+	  <li class="side-nav-menu-item {{ (Request::is('category') || Request::is('categories')) && !Request::is('category/create') && !Request::is('categories/create') ? 'active' : '' }}">
+		<a class="side-nav-menu-link" href="{{ route('category.index') }}">All Categories</a>
+	  </li>
+	  <li class="side-nav-menu-item {{ Request::is('category/create') || Request::is('categories/create') ? 'active' : '' }}">
+		<a class="side-nav-menu-link" href="{{ route('category.create') }}">Add Category</a>
+	  </li>
+	</ul>
+	<!-- Categories: sub -->
+  </li>
+  <!-- End Categories -->
+  
 </ul>
 </aside>
 <!-- End Sidebar Nav -->
