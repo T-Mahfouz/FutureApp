@@ -87,7 +87,7 @@
 		<a class="side-nav-menu-link media align-items-center" href="#"
 		data-target="#subCities">
 		<span class="side-nav-menu-icon d-flex mr-3">
-			<i class="gd-location"></i>
+			<i class="gd-map-alt"></i>
 		</span>
 		<span class="side-nav-fadeout-on-closed media-body">Cities</span>
 		<span class="side-nav-control-icon d-flex">
