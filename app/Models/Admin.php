@@ -13,10 +13,8 @@ class Admin extends Authenticatable
     use HasFactory, Notifiable;
     
     
-    protected $guarded = [];
-
-    
-    
+    // protected $guarded = [];
+    protected $fillable = ['name', 'email', 'phone', 'status', 'last_seen', 'email_verified_at', 'password', 'image_id'];
 
     /**
      * The attributes that should be hidden for serialization.
