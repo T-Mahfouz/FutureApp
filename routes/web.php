@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\UserController;
@@ -32,12 +33,21 @@ Auth::routes();
 Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
     
+    // Users
     Route::get('/users', [UserController::class, 'index'])->name('user.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('user.create');
     Route::post('/users/create', [UserController::class, 'store'])->name('user.store');
     Route::get('/users/{user}', [UserController::class, 'edit'])->name('user.edit');
     Route::patch('/users/{user}', [UserController::class, 'update'])->name('user.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+
+    // Admins
+    Route::get('/admins', [AdminsController::class, 'index'])->name('admin.index');
+    Route::get('/admins/create', [AdminsController::class, 'create'])->name('admin.create');
+    Route::post('/admins/create', [AdminsController::class, 'store'])->name('admin.store');
+    Route::get('/admins/{admin}', [AdminsController::class, 'edit'])->name('admin.edit');
+    Route::patch('/admins/{admin}', [AdminsController::class, 'update'])->name('admin.update');
+    Route::delete('/admins/{admin}', [AdminsController::class, 'destroy'])->name('admin.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
