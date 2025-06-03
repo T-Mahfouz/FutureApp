@@ -21,8 +21,11 @@
 
 		<div class="mb-3 mb-md-4 d-flex justify-content-between align-items-center">
 			<div>
-				<h3 class="mb-0">{{ ucwords(str_replace('_', ' ', $setting->key)) }}</h3>
-				<small class="text-muted">Setting for {{ $setting->city->name ?? 'Unknown City' }}</small>
+				<h3 class="mb-0">{{ $setting->key }}</h3>
+				<small class="text-muted">
+					City: {{ $setting->city->name ?? 'No City' }} | 
+					Created {{ $setting->created_at ? $setting->created_at->format('M d, Y') : 'Unknown' }}
+				</small>
 			</div>
 			<div>
 				<a href="{{ route('setting.edit', $setting) }}" class="btn btn-primary">
@@ -33,128 +36,51 @@
 
 		<!-- Setting Details -->
 		<div class="row">
-			<div class="col-md-4">
+			<div class="col-md-3">
 				<div class="card">
 					<div class="card-header">
 						<h5 class="mb-0">Setting Information</h5>
 					</div>
 					<div class="card-body">
-						<table class="table table-borderless">
-							<tr>
-								<td><strong>Key:</strong></td>
-								<td>{{ $setting->key }}</td>
-							</tr>
-							<tr>
-								<td><strong>City:</strong></td>
-								<td>
-									<span class="badge badge-primary">{{ $setting->city->name ?? 'N/A' }}</span>
-								</td>
-							</tr>
-							<tr>
-								<td><strong>Type:</strong></td>
-								<td>
-									@php
-										$settingTypes = [
-											'about_us' => 'About Us',
-											'terms_conditions' => 'Terms & Conditions',
-											'privacy_policy' => 'Privacy Policy',
-											'contact_info' => 'Contact Information',
-											'help_support' => 'Help & Support',
-											'app_config' => 'App Configuration',
-											'social_media' => 'Social Media Links',
-											'notification_settings' => 'Notification Settings',
-										];
-										
-										$type = 'Custom Setting';
-										foreach($settingTypes as $key => $label){
-											if(str_starts_with($setting->key, $key)){
-												$type = $label;
-												break;
-											}
-										}
-									@endphp
-									<span class="badge badge-secondary">{{ $type }}</span>
-								</td>
-							</tr>
-							<tr>
-								<td><strong>Created:</strong></td>
-								<td>{{ $setting->created_at->format('M d, Y H:i') }}</td>
-							</tr>
-							<tr>
-								<td><strong>Updated:</strong></td>
-								<td>{{ $setting->updated_at->format('M d, Y H:i') }}</td>
-							</tr>
-							<tr>
-								<td><strong>Content Length:</strong></td>
-								<td>{{ strlen($setting->value) }} characters</td>
-							</tr>
-						</table>
-					</div>
-				</div>
-
-				@if($setting->city)
-				<div class="card mt-3">
-					<div class="card-header">
-						<h5 class="mb-0">City Information</h5>
-					</div>
-					<div class="card-body">
-						<div class="d-flex align-items-center">
-							@if($setting->city->image)
-								<img src="{{ asset('storage/' . $setting->city->image->path) }}" alt="{{ $setting->city->name }}" class="rounded mr-3" width="50" height="50">
-							@endif
-							<div>
-								<strong>{{ $setting->city->name }}</strong>
-								<br><small class="text-muted">{{ $setting->city->services()->count() }} services</small>
-							</div>
+						<div class="mb-3">
+							<strong>City:</strong>
+							<p class="text-muted mb-2">{{ $setting->city->name ?? 'No City' }}</p>
+						</div>
+						<div class="mb-3">
+							<strong>Key:</strong>
+							<p class="text-muted mb-2">{{ $setting->key }}</p>
+						</div>
+						<div class="mb-3">
+							<strong>Created:</strong>
+							<p class="text-muted mb-2">{{ $setting->created_at ? $setting->created_at->format('M d, Y H:i') : 'Unknown' }}</p>
+						</div>
+						<div class="mb-3">
+							<strong>Updated:</strong>
+							<p class="text-muted mb-0">{{ $setting->updated_at ? $setting->updated_at->format('M d, Y H:i') : 'Unknown' }}</p>
 						</div>
 					</div>
 				</div>
-				@endif
 			</div>
-
-			<div class="col-md-8">
+			
+			<div class="col-md-9">
 				<div class="card">
-					<div class="card-header d-flex justify-content-between align-items-center">
+					<div class="card-header">
 						<h5 class="mb-0">Setting Value</h5>
-						<div>
-							<button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleView()">
-								<span id="view-toggle">Raw View</span>
-							</button>
-						</div>
 					</div>
 					<div class="card-body">
-						<!-- Rendered View -->
-						<div id="rendered-view">
-							<div class="border rounded p-3" style="background-color: #f8f9fa; min-height: 200px;">
-								{!! nl2br(e($setting->value)) !!}
-							</div>
-						</div>
-						
-						<!-- Raw View -->
-						<div id="raw-view" style="display: none;">
-							<pre class="border rounded p-3" style="background-color: #f8f9fa; min-height: 200px; white-space: pre-wrap;">{{ $setting->value }}</pre>
+						<div class="setting-content">
+							{!! $setting->value !!}
 						</div>
 					</div>
 				</div>
-
-				<!-- Quick Actions -->
-				<div class="card mt-3">
+				
+				<!-- Raw Content -->
+				<div class="card mt-4">
 					<div class="card-header">
-						<h5 class="mb-0">Quick Actions</h5>
+						<h5 class="mb-0">Raw Content</h5>
 					</div>
 					<div class="card-body">
-						<div class="row">
-							<div class="col-md-6">
-								<button type="button" class="btn btn-outline-primary btn-block" onclick="copyToClipboard()">
-									<i class="gd-clipboard"></i> Copy Value
-								</button>
-							</div>
-							<div class="col-md-6">
-								<a href="{{ route('setting.index', ['city_id' => $setting->city_id]) }}" class="btn btn-outline-info btn-block">
-									<i class="gd-eye"></i> View City Settings
-								</a>
-							</div>
-						</div>
+						<pre class="bg-light p-3 rounded"><code>{{ $setting->value }}</code></pre>
 					</div>
 				</div>
 			</div>
@@ -163,31 +89,63 @@
 	</div>
 </div>
 
-<script>
-function toggleView() {
-	const renderedView = document.getElementById('rendered-view');
-	const rawView = document.getElementById('raw-view');
-	const toggleButton = document.getElementById('view-toggle');
-	
-	if (rawView.style.display === 'none') {
-		rawView.style.display = 'block';
-		renderedView.style.display = 'none';
-		toggleButton.textContent = 'Rendered View';
-	} else {
-		rawView.style.display = 'none';
-		renderedView.style.display = 'block';
-		toggleButton.textContent = 'Raw View';
-	}
+@endsection
+
+@section('styles')
+<style>
+.setting-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
 }
 
-function copyToClipboard() {
-	const value = @json($setting->value);
-	navigator.clipboard.writeText(value).then(function() {
-		alert('Setting value copied to clipboard!');
-	}, function(err) {
-		alert('Could not copy text: ', err);
-	});
+.setting-content h1, .setting-content h2, .setting-content h3,
+.setting-content h4, .setting-content h5, .setting-content h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
 }
-</script>
 
+.setting-content p {
+    margin-bottom: 1em;
+}
+
+.setting-content ul, .setting-content ol {
+    margin-bottom: 1em;
+    padding-left: 2em;
+}
+
+.setting-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.setting-content blockquote {
+    border-left: 4px solid #007bff;
+    margin: 1em 0;
+    padding-left: 1em;
+    color: #666;
+    font-style: italic;
+}
+
+.setting-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.setting-content table th,
+.setting-content table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.setting-content table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+</style>
 @endsection

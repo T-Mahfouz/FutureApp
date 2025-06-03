@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -81,6 +82,16 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('category.toggle-status');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
+
+
+    // Settings
+    Route::get('/settings', [SettingController::class, 'index'])->name('setting.index');
+    Route::get('/settings/create', [SettingController::class, 'create'])->name('setting.create');
+    Route::post('/settings/create', [SettingController::class, 'store'])->name('setting.store');
+    Route::get('/settings/{setting}', [SettingController::class, 'show'])->name('setting.show');
+    Route::get('/settings/{setting}/edit', [SettingController::class, 'edit'])->name('setting.edit');
+    Route::patch('/settings/{setting}', [SettingController::class, 'update'])->name('setting.update');
+    Route::delete('/settings/{setting}', [SettingController::class, 'destroy'])->name('setting.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

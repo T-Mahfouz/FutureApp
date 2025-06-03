@@ -34,7 +34,7 @@
 				
 				<div class="form-row">
 					<div class="form-group col-12 col-md-6">
-						<label for="city_id">City <span class="text-danger">*</span></label>
+						<label for="city_id">City</label>
 						<select class="form-control{{ $errors->has('city_id') ? ' is-invalid' : '' }}" id="city_id" name="city_id" required>
 							<option value="">Select City</option>
 							@foreach($cities as $city)
@@ -48,63 +48,25 @@
 						@endif
 					</div>
 					<div class="form-group col-12 col-md-6">
-						<label for="setting_type">Setting Type <span class="text-danger">*</span></label>
-						<select class="form-control{{ $errors->has('setting_type') ? ' is-invalid' : '' }}" id="setting_type" name="setting_type" required>
-							@foreach($settingTypes as $key => $type)
-								<option value="{{ $key }}" {{ old('setting_type', $setting->key == $key ? $key : 'custom') == $key ? 'selected' : '' }}>
-									{{ $type }}
-								</option>
-							@endforeach
-						</select>
-						@if($errors->has('setting_type'))
-							<div class="invalid-feedback">{{ $errors->first('setting_type') }}</div>
-						@endif
-					</div>
-				</div>
-
-				<div class="form-row" id="custom_key_row" style="{{ old('setting_type', $setting->key) == 'custom' || !in_array($setting->key, array_keys($settingTypes)) ? '' : 'display: none;' }}">
-					<div class="form-group col-12">
-						<label for="key">Custom Setting Key <span class="text-danger">*</span></label>
-						<input type="text" class="form-control{{ $errors->has('key') ? ' is-invalid' : '' }}" value="{{ old('key', $setting->key) }}" id="key" name="key" placeholder="e.g., contact_email, app_version, etc.">
-						<small class="form-text text-muted">Use lowercase letters, numbers, and underscores only. Must be unique per city.</small>
+						<label for="key">Setting Key</label>
+						<input type="text" class="form-control{{ $errors->has('key') ? ' is-invalid' : '' }}" value="{{ old('key', $setting->key) }}" id="key" name="key" placeholder="Enter setting key (e.g., site_title, contact_email)" required>
 						@if($errors->has('key'))
 							<div class="invalid-feedback">{{ $errors->first('key') }}</div>
 						@endif
+						<small class="form-text text-muted">Use snake_case format (e.g., site_title, footer_text)</small>
 					</div>
 				</div>
 
 				<div class="form-row">
 					<div class="form-group col-12">
-						<label for="value">Setting Value <span class="text-danger">*</span></label>
-						<textarea class="form-control{{ $errors->has('value') ? ' is-invalid' : '' }}" id="value" name="value" rows="8" placeholder="Enter the setting value..." required>{{ old('value', $setting->value) }}</textarea>
-						<small class="form-text text-muted">You can use HTML tags for rich content like About Us, Terms, etc.</small>
+						<label for="value">Setting Value</label>
+						<textarea id="value" name="value" class="form-control{{ $errors->has('value') ? ' is-invalid' : '' }}" rows="10">{{ old('value', $setting->value) }}</textarea>
 						@if($errors->has('value'))
 							<div class="invalid-feedback">{{ $errors->first('value') }}</div>
 						@endif
+						<small class="form-text text-muted">This field supports HTML content and rich text formatting</small>
 					</div>
 				</div>
-
-				@if($setting->id)
-				<div class="form-row">
-					<div class="form-group col-12">
-						<label>Setting Information</label>
-						<div class="card bg-light">
-							<div class="card-body">
-								<div class="row">
-									<div class="col-md-6">
-										<strong>Current Key:</strong> {{ $setting->key }}<br>
-										<strong>City:</strong> {{ $setting->city->name ?? 'N/A' }}
-									</div>
-									<div class="col-md-6">
-										<strong>Created:</strong> {{ $setting->created_at->format('M d, Y H:i') }}<br>
-										<strong>Last Updated:</strong> {{ $setting->updated_at->format('M d, Y H:i') }}
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				@endif
 
 				<div class="d-flex justify-content-between">
 					<a href="{{ route('setting.index') }}" class="btn btn-secondary">Cancel</a>
@@ -116,32 +78,77 @@
 	</div>
 </div>
 
+@endsection
+
+@section('scripts')
+<!-- Include CKEditor 5 -->
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <script>
-document.getElementById('setting_type').addEventListener('change', function() {
-	const customKeyRow = document.getElementById('custom_key_row');
-	const keyInput = document.getElementById('key');
-	
-	if(this.value === 'custom') {
-		customKeyRow.style.display = '';
-		keyInput.required = true;
-	} else {
-		customKeyRow.style.display = 'none';
-		keyInput.required = false;
-		keyInput.value = this.value;
-	}
-});
-
-// Update key field when setting type changes (for non-custom types)
-document.addEventListener('DOMContentLoaded', function() {
-	const settingType = document.getElementById('setting_type');
-	const keyInput = document.getElementById('key');
-	
-	settingType.addEventListener('change', function() {
-		if(this.value !== 'custom') {
-			keyInput.value = this.value;
-		}
-	});
-});
+ClassicEditor
+    .create(document.querySelector('#value'), {
+        toolbar: {
+            items: [
+                'heading',
+                '|',
+                'bold',
+                'italic',
+                'link',
+                'bulletedList',
+                'numberedList',
+                '|',
+                'outdent',
+                'indent',
+                '|',
+                'blockQuote',
+                'insertTable',
+                'undo',
+                'redo'
+            ]
+        },
+        language: 'en',
+        table: {
+            contentToolbar: [
+                'tableColumn',
+                'tableRow',
+                'mergeTableCells'
+            ]
+        }
+    })
+    .then(editor => {
+        window.editor = editor;
+        
+        // Set editor height to 500px
+        editor.editing.view.change(writer => {
+            writer.setStyle('height', '250px', editor.editing.view.document.getRoot());
+        });
+        
+        // Hide the original textarea after CKEditor is initialized
+        document.querySelector('#value').style.display = 'none';
+        
+        // Handle form submission to sync CKEditor content
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const textarea = document.querySelector('#value');
+            const content = editor.getData();
+            
+            // Update textarea value
+            textarea.value = content;
+            
+            // Remove required attribute temporarily to avoid validation issues
+            textarea.removeAttribute('required');
+            
+            // Check if content is empty and prevent submission if required
+            if (!content.trim()) {
+                e.preventDefault();
+                alert('Please enter some content in the editor.');
+                return false;
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error initializing CKEditor:', error);
+        // Show the textarea if CKEditor fails to load
+        document.querySelector('#value').style.display = 'block';
+    });
 </script>
-
 @endsection
