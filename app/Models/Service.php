@@ -41,6 +41,16 @@ class Service extends Model
         return $this->hasMany(ServicePhone::class);
     }
 
+    public function subServices()
+    {
+        return $this->hasMany(Service::class, 'parent_id');
+    }
+
+    public function parentService()
+    {
+        return $this->belongsTo(Service::class, 'parent_id');
+    }
+    
     public function favorites()
     {
         return $this->hasMany(Favorite::class);

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminsController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,16 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/cities/{city}/edit', [CityController::class, 'edit'])->name('city.edit');
     Route::patch('/cities/{city}', [CityController::class, 'update'])->name('city.update');
     Route::delete('/cities/{city}', [CityController::class, 'destroy'])->name('city.destroy');
+
+    // Services
+    Route::get('/services', [ServiceController::class, 'index'])->name('service.index');
+    Route::get('/services/create', [ServiceController::class, 'create'])->name('service.create');
+    Route::post('/services/create', [ServiceController::class, 'store'])->name('service.store');
+    Route::get('/services/{service}', [ServiceController::class, 'show'])->name('service.show');
+    Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('service.edit');
+    Route::patch('/services/{service}', [ServiceController::class, 'update'])->name('service.update');
+    Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
+    Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
