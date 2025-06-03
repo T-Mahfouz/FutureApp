@@ -167,7 +167,7 @@ class CategoryController extends Controller
                 ->route('category.index')
                 ->with('error', 'Cannot delete category. It has subcategories or services assigned to it.');
         }
-        
+
         // Delete image if exists
         if($category->image){
             Storage::disk('public')->delete($category->image->path);
@@ -202,7 +202,7 @@ class CategoryController extends Controller
             'category_ids.*' => 'exists:categories,id'
         ]);
 
-        $deletedCount = 0;
+        $deletedItems = [];
         $errors = [];
 
         foreach ($request->category_ids as $categoryId) {
@@ -210,36 +210,76 @@ class CategoryController extends Controller
                 $category = Category::find($categoryId);
                 if (!$category) continue;
 
-                // Check if category has children
-                if ($category->children()->count() > 0) {
-                    $errors[] = "Category '{$category->name}' has sub-categories and cannot be deleted.";
-                    continue;
+                $categoryName = $category->name;
+                $currentDeletedItems = [];
+
+                // Delete all sub-categories (children) recursively
+                $this->deleteChildrenRecursively($category, $currentDeletedItems);
+
+                // Delete all services associated with this category
+                $services = $category->services;
+                foreach($services as $service) {
+                    // Delete service images
+                    foreach($service->images as $serviceImage) {
+                        if($serviceImage->path) {
+                            Storage::disk('public')->delete($serviceImage->path);
+                        }
+                        $serviceImage->delete();
+                    }
+
+                    // Delete service main image
+                    if($service->image) {
+                        Storage::disk('public')->delete($service->image->path);
+                        $service->image->delete();
+                    }
+
+                    // Delete service phones
+                    $service->phones()->delete();
+
+                    // Delete service favorites
+                    $service->favorites()->delete();
+
+                    // Delete service rates
+                    $service->rates()->delete();
+
+                    // Delete service notifications
+                    $service->notifications()->delete();
+
+                    // Detach service from categories
+                    $service->categories()->detach();
+
+                    // Delete the service
+                    $service->delete();
+                    $currentDeletedItems[] = "service '{$service->name}'";
                 }
 
-                // Detach services
-                $category->services()->detach();
-
-                // Delete image if exists
-                if($category->image){
+                // Delete category image
+                if($category->image) {
                     Storage::disk('public')->delete($category->image->path);
                     $category->image->delete();
                 }
 
+                // Delete the main category
                 $category->delete();
-                $deletedCount++;
+                $currentDeletedItems[] = "category '{$categoryName}'";
+
+                $deletedItems = array_merge($deletedItems, $currentDeletedItems);
 
             } catch (\Exception $e) {
-                $errors[] = "Error deleting category '{$category->name}': " . $e->getMessage();
+                $errors[] = "Error deleting category '{$categoryName}': " . $e->getMessage();
             }
         }
 
-        $message = $deletedCount > 0 ? "{$deletedCount} categories deleted successfully." : "";
+        $message = "";
+        if (!empty($deletedItems)) {
+            $message = "Successfully deleted: " . implode(', ', $deletedItems);
+        }
         if (!empty($errors)) {
-            $message .= " Errors: " . implode(", ", $errors);
+            $message .= (!empty($message) ? " | " : "") . "Errors: " . implode(", ", $errors);
         }
 
         return redirect()
             ->route('category.index')
-            ->with($deletedCount > 0 ? 'status' : 'error', $message);
+            ->with(!empty($deletedItems) ? 'status' : 'error', $message ?: 'No items were deleted.');
     }
 }

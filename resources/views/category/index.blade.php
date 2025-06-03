@@ -39,11 +39,11 @@
 						<div class="row">
 							<div class="col-lg-3 col-md-4 col-sm-6 mb-3">
 								<label for="search" class="form-label">Search by Name</label>
-								<div class="input-group">
-									<div class="input-group-prepend">
-										<span class="input-group-text"><i class="gd-search"></i></span>
+								<div class="position-relative">
+									<input type="text" class="form-control pr-5" id="search" name="search" value="{{ request('search') }}" placeholder="Search categories...">
+									<div class="position-absolute" style="right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+										<i class="gd-search text-muted"></i>
 									</div>
-									<input type="text" class="form-control" id="search" name="search" value="{{ request('search') }}" placeholder="Category name...">
 								</div>
 							</div>
 							<div class="col-lg-2 col-md-4 col-sm-6 mb-3">
@@ -289,7 +289,7 @@
 							<a class="d-inline-block mr-2 text-danger" href="#" onclick="if(confirm('{{ $category->active ? 'Deactivate' : 'Activate' }} this category?')){document.getElementById('toggle-status-{{ $category->id }}').submit();return false;}" title="{{ $category->active ? 'Deactivate' : 'Activate' }}">
 								<i class="gd-reload icon-text"></i>
 							</a>
-							<a class="link-dark d-inline-block" href="#" onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->name) }}')" title="Delete">
+							<a class="link-dark d-inline-block" href="#" onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->name) }}', {{ $category->services_count }}, {{ $category->children_count }})" title="Delete">
 								<i class="gd-trash icon-text text-danger"></i>
 							</a>
 							<form id="toggle-status-{{ $category->id }}" action="{{ route('category.toggle-status', $category) }}" method="POST" style="display: none;">
@@ -298,6 +298,11 @@
 							<form id="delete-form-{{ $category->id }}" action="{{ route('category.destroy', $category) }}" method="POST" style="display: none;">
 								@csrf
 								@method('DELETE')
+							</form>
+							<form id="force-delete-form-{{ $category->id }}" action="{{ route('category.destroy', $category) }}" method="POST" style="display: none;">
+								@csrf
+								@method('DELETE')
+								<input type="hidden" name="force" value="true">
 							</form>
 						</div>
 					</td>
@@ -328,9 +333,42 @@
 </div>
 
 <script>
-function confirmDelete(categoryId, categoryName) {
-    if (confirm('Are you sure you want to delete the category "' + categoryName + '"?\n\nThis action cannot be undone.\n\nNote: All services will be detached from this category, but the services themselves will not be deleted.')) {
+function confirmDelete(categoryId, categoryName, servicesCount, childrenCount) {
+    // If category has no related data, simple confirmation
+    if (servicesCount == 0 && childrenCount == 0) {
+        if (confirm('Are you sure you want to delete the category "' + categoryName + '"?\n\nThis action cannot be undone.')) {
+            document.getElementById('delete-form-' + categoryId).submit();
+        }
+        return false;
+    }
+    
+    // If category has related data, show detailed warning
+    let message = '⚠️ WARNING: Category with Related Data ⚠️\n\n';
+    message += 'The category "' + categoryName + '" contains:\n';
+    
+    if (servicesCount > 0) {
+        message += '• ' + servicesCount + ' services\n';
+    }
+    if (childrenCount > 0) {
+        message += '• ' + childrenCount + ' sub-categories\n';
+    }
+    
+    message += '\nFirst deletion attempt will show you exactly what will be deleted.\n';
+    message += 'You will then get a second chance to force delete everything.\n\n';
+    message += 'Do you want to proceed with the deletion check?';
+    
+    if (confirm(message)) {
         document.getElementById('delete-form-' + categoryId).submit();
+    }
+    return false;
+}
+
+function forceDelete(categoryId, categoryName) {
+    if (confirm('🚨 FINAL WARNING 🚨\n\n' +
+               'This will PERMANENTLY DELETE the category "' + categoryName + '" and ALL related data.\n\n' +
+               'This action CANNOT be undone!\n\n' +
+               'Are you absolutely certain you want to proceed?')) {
+        document.getElementById('force-delete-form-' + categoryId).submit();
     }
     return false;
 }
