@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdController;
 use App\Http\Controllers\Admin\AdminsController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CityController;
@@ -84,6 +85,15 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
 
+    // Ads
+    Route::get('/ads', [AdController::class, 'index'])->name('ad.index');
+    Route::post('/ads/bulk-action', [AdController::class, 'bulkAction'])->name('ad.bulk-action');
+    Route::get('/ads/create', [AdController::class, 'create'])->name('ad.create');
+    Route::post('/ads/create', [AdController::class, 'store'])->name('ad.store');
+    Route::get('/ads/{ad}', [AdController::class, 'show'])->name('ad.show');
+    Route::get('/ads/{ad}/edit', [AdController::class, 'edit'])->name('ad.edit');
+    Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
+    Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->name('ad.destroy');
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('setting.index');

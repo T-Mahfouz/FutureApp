@@ -165,7 +165,35 @@
 	</li>
 	<!-- End Categories -->
 
-	  <!-- Title -->
+
+	<!-- Ads -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('ad*') || Request::is('ads*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subAds">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-image"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Ads</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Ads: sub -->
+		<ul id="subAds" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('ad') || Request::is('ads')) && !Request::is('ad/create') && !Request::is('ads/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('ad.index') }}">All Ads</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('ad/create') || Request::is('ads/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('ad.create') }}">Add Ad</a>
+		</li>
+		</ul>
+		<!-- Ads: sub -->
+	</li>
+	<!-- End Ads -->
+
+	<!-- Title -->
 	<li class="sidebar-heading h6">Communications</li>
 	<!-- End Title -->
 	
