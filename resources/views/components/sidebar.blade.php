@@ -165,6 +165,21 @@
 	</li>
 	<!-- End Categories -->
 
+	  <!-- Title -->
+	<li class="sidebar-heading h6">Communications</li>
+	<!-- End Title -->
+	
+	<!-- Contact Messages -->
+	<li class="side-nav-menu-item {{ Request::is('contact*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="{{ route('contact.index') }}">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-envelope"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Contact Messages</span>
+		</a>
+	</li>
+	<!-- End Contact Messages -->
+
   	<!-- Settings -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('setting*') || Request::is('settings*') ? 'active' : '' }}">
 <a class="side-nav-menu-link media align-items-center" href="#"

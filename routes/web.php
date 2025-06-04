@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminsController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CityController;
+use App\Http\Controllers\Admin\ContactUsController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ServiceController;
@@ -92,6 +93,13 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/settings/{setting}/edit', [SettingController::class, 'edit'])->name('setting.edit');
     Route::patch('/settings/{setting}', [SettingController::class, 'update'])->name('setting.update');
     Route::delete('/settings/{setting}', [SettingController::class, 'destroy'])->name('setting.destroy');
+
+    // Contact Messages
+    Route::get('/contacts', [ContactUsController::class, 'index'])->name('contact.index');
+    Route::post('/contacts/bulk-action', [ContactUsController::class, 'bulkAction'])->name('contact.bulk-action');
+    Route::get('/contacts/{contact}', [ContactUsController::class, 'show'])->name('contact.show');
+    Route::post('/contacts/{contact}/toggle-read', [ContactUsController::class, 'toggleRead'])->name('contact.toggle-read');
+    Route::delete('/contacts/{contact}', [ContactUsController::class, 'destroy'])->name('contact.destroy');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
