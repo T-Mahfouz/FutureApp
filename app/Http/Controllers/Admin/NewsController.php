@@ -110,18 +110,13 @@ class NewsController extends Controller
         $imageId = $news->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('all_images', 'public');
             
-            // Create media record
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
+            $media = resizeImage($image, $this->storagePath);
             
-            $imageId = $media->id;
+            $imageId = $media->id ?? null;
             
             // Delete old image if exists
-            if($news->image_id && $news->image){
+            if($imageId && $news->image_id && $news->image){
                 Storage::disk('public')->delete($news->image->path);
                 $news->image->delete();
             }
@@ -198,38 +193,6 @@ class NewsController extends Controller
             ->with('status', 'News has been deleted successfully');
     }
     
-
-    // public function destroyImage($id)
-    // {
-    //     dd($id);
-    //     \DB::beginTransaction();
-    //     try {
-    //         $image = NewsImage::find($id);
-    //         if (!$image) {
-    //             return redirect()
-    //                 ->back()
-    //                 ->withError('status', 'Image not found');
-    //         }
-    //         $media = Media::find($image->image_id);
-
-    //         if ($media) {
-    //             Storage::disk('public')->delete($media->path);
-    //             $image->delete();
-    //         }
-
-    //         \DB::commit();
-    //     } catch (\Exception $ex) {
-    //         \DB::rollBack();
-    //         return redirect()
-    //             ->back()
-    //             ->withError('error', $ex->getMessage());
-    //     }
-        
-        
-    //     return redirect()
-    //         ->back()
-    //         ->with('status', 'Image has been deleted successfully');
-    // }
     public function destroyImage($id)
     {
         \DB::beginTransaction();

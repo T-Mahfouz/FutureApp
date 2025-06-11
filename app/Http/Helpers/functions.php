@@ -90,47 +90,95 @@ if (!function_exists('uploadFile')) {
 
 
 if (!function_exists('resizeImage')) {
-    function resizeImage($file, $path) {
-        
-        $imgManager = new ImageManager(
-            new Intervention\Image\Drivers\Gd\Driver()
-        );
-        
-        $img = $imgManager->read($file->getRealPath());
+    function resizeImage($file, $path, $subfolder = 'all_images', $maxWidth = 512, $maxHeight = 512, $minDimension = 100, $quality = 85) {
+        try {
 
-        # Get the original dimensions
-        $originalWidth = $img->width();
-        $originalHeight = $img->height();
+            $imgManager = new ImageManager(new Driver());
+            $img = $imgManager->read($file->getRealPath());
 
-        # Calculate the new dimensions (one-third of the original dimensions)
-        if ($originalWidth > 400 || $originalHeight > 400) {
-            $newWidth = (int) ($originalWidth - ($originalWidth * 0.9));
-            $newHeight = (int) ($originalHeight - ($originalHeight * 0.9));
-            
-            if ($newWidth >= 200 || $newHeight >= 200) {
-                $newWidth = (int) ($newWidth / 2);
-                $newHeight = (int) ($newHeight / 2);
+            // Get the original dimensions
+            $originalWidth = $img->width();
+            $originalHeight = $img->height();
+
+            // Calculate new dimensions while maintaining aspect ratio
+            $newDimensionsArray = calculateNewDimensions(
+                $originalWidth, 
+                $originalHeight, 
+                $maxWidth, 
+                $maxHeight, 
+                $minDimension
+            );
+
+            $newWidth = $newDimensionsArray['width'];
+            $newHeight = $newDimensionsArray['height'];
+
+            // Generate filename
+            $ext = strtolower($file->getClientOriginalExtension());
+            $baseName = $file->getClientOriginalName();
+            $timestamp = time();
+            $randomString = Str::random(8);
+            $finalFilename = "{$baseName}-{$newWidth}x{$newHeight}-{$timestamp}-{$randomString}.{$ext}";
+
+            $destination = $path . DIRECTORY_SEPARATOR . $subfolder;
+            $imagePath = $subfolder . DIRECTORY_SEPARATOR . $finalFilename;
+            $finalPath = $destination . DIRECTORY_SEPARATOR . $finalFilename;
+
+
+            // Check if resize is actually needed
+            if ($originalWidth == $newWidth && $originalHeight == $newHeight) {
+                goto  insert;
             }
-        } else {
-            $newWidth = (int) ($originalWidth / 4);
-            $newHeight = (int) ($originalHeight / 4);
+            
+            // Ensure destination directory exists
+            if (!file_exists($destination)) {
+                if (!mkdir($destination, 0755, true)) {
+                    throw new Exception("Failed to create directory: {$destination}");
+                }
+            }
+            
+            // Resize and save the image
+            $img->resize($newWidth, $newHeight)->save($finalPath, $quality);
+
+            insert:
+                return insertToMedia($imagePath);
+
+        } catch (Exception $e) {
+            Log::error('Image resize failed: ' . $e->getMessage());
+            return null;
         }
-
-        $ext = strtolower($file->getClientOriginalExtension());
-        $name = time().Str::random(5);
-        $fileName = $newWidth.'X'."$newHeight-$name.$ext";
-
-        $destination = public_path($path);
         
-        if (!file_exists($destination)) {
-            mkdir($destination, 0777, true);
+    }
+}
+
+
+if (!function_exists('insertToMedia')) {
+    function insertToMedia($path)
+    {
+        try {
+            if (empty($path)) {
+                return null;
+            }
+            
+            // Check if media already exists
+            $existingMedia = Media::where('path', $path)->first();
+            if ($existingMedia) {
+                return $existingMedia;
+            }
+            
+            return Media::create([
+                'path' => $path,
+                'type' => 'image', // Assuming it's always an image, adjust as needed
+                'size' => null, // Add file size if available
+                'mime_type' => null // Add mime type if available
+            ]);
+            
+        } catch (\Exception $e) {
+            log::error('Failed to create media', [
+                'image_path' => $path,
+                'error' => $e->getMessage()
+            ]);
+            return null;
         }
-
-        # Resize the image while maintaining the aspect ratio
-        $img->resize($newWidth, $newHeight)
-            ->save($destination.'/'.$fileName);
-        
-        return "$path/$fileName";
     }
 }
 

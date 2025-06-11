@@ -115,17 +115,13 @@ class ServiceController extends Controller
         $imageId = $service->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('all_images', 'public');
+
+            $media = resizeImage($image, $this->storagePath);
             
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
-            
-            $imageId = $media->id;
+            $imageId = $media->id ?? null;
             
             // Delete old image if exists
-            if($service->image_id && $service->image){
+            if($imageId && $service->image_id && $service->image){
                 Storage::disk('public')->delete($service->image->path);
                 $service->image->delete();
             }
@@ -189,12 +185,14 @@ class ServiceController extends Controller
         // Handle additional images
         if($request->hasFile('additional_images')){
             foreach($request->file('additional_images') as $image){
-                $path = $image->store('all_images', 'public');
-                $media = Media::create([
-                    'path' => $path,
-                    'type' => 'image'
-                ]);
-                $service->images()->attach($media->id);
+                
+                $media = resizeImage($image, $this->storagePath);
+            
+                $imageId = $media->id ?? null;
+                
+                if ($imageId) {
+                    $service->images()->attach($media->id);
+                }
             }
         }
 

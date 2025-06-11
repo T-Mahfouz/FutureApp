@@ -54,18 +54,13 @@ class CityController extends Controller
         $imageId = $city->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('all_images','public');
+
+            $media = resizeImage($image, $this->storagePath);
             
-            // Create media record
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
-            
-            $imageId = $media->id;
+            $imageId = $media->id ?? null;
             
             // Delete old image if exists
-            if($city->image_id && $city->image){
+            if($imageId && $city->image_id && $city->image){
                 Storage::disk('public')->delete($city->image->path);
                 $city->image->delete();
             }

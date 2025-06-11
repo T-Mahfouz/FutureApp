@@ -115,18 +115,13 @@ class CategoryController extends Controller
         $imageId = $category->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('all_images', 'public');
             
-            // Create media record
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
+            $media = resizeImage($image, $this->storagePath);
             
-            $imageId = $media->id;
+            $imageId = $media->id ?? null;
             
             // Delete old image if exists
-            if($category->image_id && $category->image){
+            if($imageId && $category->image_id && $category->image){
                 Storage::disk('public')->delete($category->image->path);
                 $category->image->delete();
             }

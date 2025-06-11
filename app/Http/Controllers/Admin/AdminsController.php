@@ -73,18 +73,13 @@ class AdminsController extends Controller
         $imageId = $admin->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('all_images', 'public');
             
-            // Create media record
-            $media = Media::create([
-                'path' => $path,
-                'type' => 'image'
-            ]);
+            $media = resizeImage($image, $this->storagePath);
             
-            $imageId = $media->id;
+            $imageId = $media->id ?? null;
             
             // Delete old image if exists
-            if($admin->image_id && $admin->image){
+            if($imageId && $admin->image_id && $admin->image){
                 Storage::disk('public')->delete($admin->image->path);
                 $admin->image->delete();
             }

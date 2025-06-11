@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\Log;
 
 abstract class Controller
 {
+
+    public $storagePath;
+
+    public function __construct()
+    {
+        $this->storagePath = storage_path('app/public');
+    }
     /**
      * Create media record (placeholder method - implement based on your Media model)
      *
