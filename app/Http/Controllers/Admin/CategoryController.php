@@ -115,7 +115,7 @@ class CategoryController extends Controller
         $imageId = $category->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('category_images', 'public');
+            $path = $image->store('all_images', 'public');
             
             // Create media record
             $media = Media::create([

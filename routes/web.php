@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ContactUsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\NewsController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SettingController;
@@ -74,6 +76,16 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
 
+    // News
+    Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+    Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
+    Route::post('/news/create', [NewsController::class, 'store'])->name('news.store');
+    Route::get('/news/{news}', [NewsController::class, 'show'])->name('news.show');
+    Route::get('/news/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
+    Route::patch('/news/{news}', [NewsController::class, 'update'])->name('news.update');
+    Route::delete('/news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+    Route::delete('/news/images/{id}', [NewsController::class, 'destroyImage'])->name('news.image.destroy');
+
     // Categories
     Route::get('/categories', [CategoryController::class, 'index'])->name('category.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('category.create');
@@ -94,6 +106,17 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/ads/{ad}/edit', [AdController::class, 'edit'])->name('ad.edit');
     Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
     Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->name('ad.destroy');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');
+    Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notification.create');
+    Route::post('/notifications/create', [NotificationController::class, 'store'])->name('notification.store');
+    Route::get('/notifications/send-firebase', [NotificationController::class, 'create'])->name('notification.send-firebase');
+    Route::post('/notifications/send-firebase', [NotificationController::class, 'sendFirebase'])->name('notification.send-firebase-post');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notification.show');
+    Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
+    Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notification.destroy');
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('setting.index');

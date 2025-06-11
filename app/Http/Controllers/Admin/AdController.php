@@ -77,7 +77,7 @@ class AdController extends Controller
         $imageId = $ad->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('ad_images', 'public');
+            $path = $image->store('all_images','public');
             
             // Create media record
             $media = Media::create([

@@ -54,7 +54,7 @@ class CityController extends Controller
         $imageId = $city->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('city_images', 'public');
+            $path = $image->store('all_images','public');
             
             // Create media record
             $media = Media::create([

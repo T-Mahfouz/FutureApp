@@ -115,7 +115,7 @@ class ServiceController extends Controller
         $imageId = $service->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            $path = $image->store('service_images', 'public');
+            $path = $image->store('all_images', 'public');
             
             $media = Media::create([
                 'path' => $path,
@@ -189,7 +189,7 @@ class ServiceController extends Controller
         // Handle additional images
         if($request->hasFile('additional_images')){
             foreach($request->file('additional_images') as $image){
-                $path = $image->store('service_images', 'public');
+                $path = $image->store('all_images', 'public');
                 $media = Media::create([
                     'path' => $path,
                     'type' => 'image'

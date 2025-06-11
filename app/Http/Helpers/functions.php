@@ -2,6 +2,7 @@
 
 use App\Models\Media;
 use App\Models\UserSetting;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -141,32 +142,6 @@ if (!function_exists('deleteImage')) {
     }
 }
 
-// if (!function_exists('resizeImage')) {
-//     function resizeImage($file, $path, $dimensions = [100, 100], $allSizes=false) {
-        
-//         $destination = public_path($path);
-
-//         if (!file_exists($destination)) {
-//             // mkdir($destination, 777, true);
-//             mkdir($destination);
-//         }
-
-//         $ext = strtolower($file->getClientOriginalExtension());
-//         $name = time().Str::random(5);
-//         $fileName = "$dimensions[0]X$dimensions[1]$name.$ext";
-
-//         $img = new ImageManager(
-//             new Intervention\Image\Drivers\Gd\Driver()
-//         );
-
-//         $img = $img->read($file->getRealPath());
-
-//         $img->resize($dimensions[0], $dimensions[1])->save($destination.'/'.$fileName);
-
-//         return "$path/$fileName";
-//     }
-// }
-
 
 if (!function_exists('imagesSizes')) {
     function imagesSizes() {
@@ -264,4 +239,74 @@ if (!function_exists('getCurrentUser')) {
             'data'  => Auth::guard($userGuard)->user() 
         ];
     }
+}
+
+
+if (!function_exists('FCMPush')) {
+    function FCMPush($cityID,$title,$body,$type,$extra=[])
+    {
+        $config =  getConfig($cityID);
+        if(!$config)
+            return null;
+        $url = 'https://fcm.googleapis.com/v1/projects/future-app-40ca2/messages:send';
+
+        $data = array();
+        foreach ($extra as $key => $value) {
+        $data[$key] = $value;
+        }
+
+        if($config->firebase_topic != null) {
+            $fields = [
+            "message" => [
+                "topic" => $config->firebase_topic,
+                "notification" => [
+                    "title" => (string)$title,
+                    "body"  => (string)$body,
+                    "image" => isset($extra['image']) ? (string)$extra['image'] : '',
+                ],
+                "data" => [
+                    "priority" => "high",
+                    "title" => (string)$title,
+                    "body"  => (string)$body,
+                    "image" => isset($extra['image']) ? $extra['image'] : '',
+                    "institute_id" => isset($extra['institute_id']) ? (string)$extra['institute_id'] : 0
+                ],
+
+            ]
+            ];
+        }
+        $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+
+        $credentials = new ServiceAccountCredentials($scopes, \Illuminate\Support\Facades\Storage::path('client_secret_google.json'));
+
+        // Get the access token
+        $token = $credentials->fetchAuthToken();
+
+        // Print the access token
+        $accessToken = $token['access_token'];
+
+        $fcmApiKey = $config->firebase_token;
+
+        $headers = array(
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type:application/json'
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+        $result = curl_exec($ch);
+        if ($result === false) {
+            die('cUrl faild: '.curl_error($ch));
+        }
+        curl_close($ch);
+        
+        return $result;
+    }
+
 }

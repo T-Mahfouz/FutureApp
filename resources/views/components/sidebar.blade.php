@@ -193,6 +193,63 @@
 	</li>
 	<!-- End Ads -->
 
+	<!-- News -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('news*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+			data-target="#subNews">
+			<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-file"></i>
+			</span>
+			<span class="side-nav-fadeout-on-closed media-body">News</span>
+			<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+			</span>
+			<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- News: sub -->
+		<ul id="subNews" class="side-nav-menu side-nav-menu-second-level mb-0">
+			<li class="side-nav-menu-item {{ Request::is('news') && !Request::is('news/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('news.index') }}">All News</a>
+			</li>
+			<li class="side-nav-menu-item {{ Request::is('news/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('news.create') }}">Add News</a>
+			</li>
+		</ul>
+		<!-- News: sub -->
+	</li>
+	<!-- End News -->
+
+	<!-- Notifications -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('notification*') || Request::is('notifications*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subNotifications">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-bell"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Notifications</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Notifications: sub -->
+		<ul id="subNotifications" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('notification') || Request::is('notifications')) && !Request::is('notification/create') && !Request::is('notifications/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('notification.index') }}">All Notifications</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('notification/create') || Request::is('notifications/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('notification.create') }}">Add Notification</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('notification/send-firebase') || Request::is('notifications/send-firebase') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('notification.send-firebase') }}">Send Firebase Only</a>
+		</li>
+		</ul>
+		<!-- Notifications: sub -->
+	</li>
+	<!-- End Notifications -->
+
 	<!-- Title -->
 	<li class="sidebar-heading h6">Communications</li>
 	<!-- End Title -->
