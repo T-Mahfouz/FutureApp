@@ -7,10 +7,10 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} - @yield('title')</title>
+    <title>{{ config('app.name', 'Future') }} - @yield('title')</title>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
     <!-- Styles -->
     <link href="{{ mix('/graindashboard/css/graindashboard.css') }}" rel="stylesheet">
 </head>

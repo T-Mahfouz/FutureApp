@@ -3,15 +3,15 @@
   <nav class="navbar flex-nowrap p-0">
 	<div class="navbar-brand-wrapper d-flex align-items-center col-auto">
 	  <!-- Logo For Mobile View -->
-	  <a class="navbar-brand navbar-brand-mobile" href="/">
-		<img class="img-fluid w-100" src="{{ asset('img/logo-mini.png') }}" alt="{{ config('app.name', 'Laravel') }}">
+	  <a class="navbar-brand navbar-brand-mobile" href={{ route('dashboard') }}>
+		<img class="img-fluid w-100" src="{{ asset('img/logo-mini.png') }}" alt="{{ config('app.name', 'Future') }}">
 	  </a>
 	  <!-- End Logo For Mobile View -->
 
 	  <!-- Logo For Desktop View -->
-	  <a class="navbar-brand navbar-brand-desktop" href="/">
-		<img class="side-nav-show-on-closed" src="{{ asset('img/logo-mini.png') }}" alt="{{ config('app.name', 'Laravel') }}" style="width: auto; height: 33px;">
-		<img class="side-nav-hide-on-closed" src="{{ asset('img/logo.png') }}" alt="{{ config('app.name', 'Laravel') }}" style="width: auto; height: 33px;">
+	  <a class="navbar-brand navbar-brand-desktop"href={{ route('dashboard') }}>
+		<img class="side-nav-show-on-closed" src="{{ asset('img/logo-mini.png') }}" alt="{{ config('app.name', 'Future') }}" style="width: auto; height: 33px;">
+		<img class="side-nav-hide-on-closed" src="{{ asset('img/logo.png') }}" alt="{{ config('app.name', 'Future') }}" style="width: auto; height: 33px;">
 	  </a>
 	  <!-- End Logo For Desktop View -->
 	</div>

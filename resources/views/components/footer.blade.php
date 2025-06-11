@@ -18,7 +18,7 @@
 	</div>
 
 	<div class="col-lg text-center text-lg-right">
-	  &copy; {{ date('Y') }} {{ config('app.name', 'Laravel') }}. All Rights Reserved.
+	  &copy; {{ date('Y') }} {{ config('app.name', 'Future') }}. All Rights Reserved.
 	</div>
   </div>
 </footer>
