@@ -10,10 +10,25 @@
 	</div>
 
 	<div class="col-lg text-center mb-3 mb-lg-0">
+		<div class="text-muted mb-1">
+			<i class="gd-code mr-1"></i>Developed by <strong>Tarek Mahfouz</strong>
+		</div>
 		<ul class="list-inline mb-0">
-			<li class="list-inline-item mx-2"><a class="link-muted" href="#"><i class="gd-twitter-alt"></i></a></li>
-			<li class="list-inline-item mx-2"><a class="link-muted" href="#"><i class="gd-facebook"></i></a></li>
-			<li class="list-inline-item mx-2"><a class="link-muted" href="#"><i class="gd-github"></i></a></li>
+			<li class="list-inline-item mx-1">
+				<a class="link-muted" href="mailto:tarek.mahfouz2011@gmail.com" title="Email">
+					<i class="gd-email"></i>
+				</a>
+			</li>
+			<li class="list-inline-item mx-1">
+				<a class="link-muted" href="https://www.linkedin.com/in/tarek-mahfouz" title="LinkedIn" target="_blank">
+					<i class="gd-linkedin"></i>
+				</a>
+			</li>
+			<li class="list-inline-item mx-1">
+				<a class="link-muted" href="tel:+201114254513" title="Phone">
+					<i class="gd-mobile"></i>
+				</a>
+			</li>
 		</ul>
 	</div>
 

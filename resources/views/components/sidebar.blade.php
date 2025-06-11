@@ -16,6 +16,17 @@
 	</li>
 	<!-- End Dashboard -->
 	
+	<!-- Analytics -->
+	<li class="side-nav-menu-item {{ Request::is('analytics*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="{{ route('analytics') }}">
+			<span class="side-nav-menu-icon d-flex mr-3">
+				<i class="gd-bar-chart"></i>
+			</span>
+			<span class="side-nav-fadeout-on-closed media-body">Analytics</span>
+		</a>
+	</li>
+	<!-- End Analytics -->
+
 	<!-- Title -->
 	<li class="sidebar-heading h6">Administration</li>
 	<!-- End Title -->

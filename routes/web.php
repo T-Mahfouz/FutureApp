@@ -40,6 +40,7 @@ Auth::routes();
 
 Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+    Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
     
     // Users
     Route::get('/users', [UserController::class, 'index'])->name('user.index');
