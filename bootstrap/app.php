@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ],
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            Route::prefix('migration')
+                ->group(base_path('routes/migrations.php'));
+        }
     )
     ->withMiddleware(function (Middleware $middleware) {
         // $middleware->group('api', [
@@ -23,3 +27,5 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+
+    

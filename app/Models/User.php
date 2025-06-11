@@ -13,7 +13,8 @@ class User extends Authenticatable implements JWTSubject
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
     
-    protected $guarded = [];
+    // protected $guarded = [];
+    protected $fillable = ['name', 'phone', 'city_id', 'email', 'password', 'email_verified_at'];
 
     /**
      * The attributes that should be hidden for serialization.

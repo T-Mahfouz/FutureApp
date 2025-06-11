@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\Log;
 
 abstract class Controller
 {
+
+    public $storagePath;
+
+    public function __construct()
+    {
+        $this->storagePath = storage_path('app/public');
+    }
     /**
      * Create media record (placeholder method - implement based on your Media model)
      *
@@ -19,6 +26,8 @@ abstract class Controller
             if (empty($imagePath)) {
                 return null;
             }
+            
+            $imagePath = 'all_images/'.$imagePath;
             
             // Check if media already exists
             $existingMedia = Media::where('path', $imagePath)->first();

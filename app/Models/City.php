@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class City extends Model
 {
-    protected $fillable = ['id','name','image_id'];
+    protected $guarded = [];
 
     public function config()
     {
@@ -46,6 +46,11 @@ class City extends Model
     public function contactUs()
     {
         return $this->hasMany(ContactUs::class);
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
     }
 
     public function image()
