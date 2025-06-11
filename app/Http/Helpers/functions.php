@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
 
+use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Facades\Log;
+
 if (!function_exists('jsonResponse')) {
     function jsonResponse($code = 200, $message = 'done', $data = []) {
         $code = getCode($code);
@@ -95,11 +98,11 @@ if (!function_exists('resizeImage')) {
         
         $img = $imgManager->read($file->getRealPath());
 
-        // Get the original dimensions
+        # Get the original dimensions
         $originalWidth = $img->width();
         $originalHeight = $img->height();
 
-        // Calculate the new dimensions (one-third of the original dimensions)
+        # Calculate the new dimensions (one-third of the original dimensions)
         if ($originalWidth > 400 || $originalHeight > 400) {
             $newWidth = (int) ($originalWidth - ($originalWidth * 0.9));
             $newHeight = (int) ($originalHeight - ($originalHeight * 0.9));
@@ -123,7 +126,7 @@ if (!function_exists('resizeImage')) {
             mkdir($destination, 0777, true);
         }
 
-        // Resize the image while maintaining the aspect ratio
+        # Resize the image while maintaining the aspect ratio
         $img->resize($newWidth, $newHeight)
             ->save($destination.'/'.$fileName);
         
@@ -309,4 +312,214 @@ if (!function_exists('FCMPush')) {
         return $result;
     }
 
+}
+
+
+
+
+if (!function_exists('resizeExistingImage')) {
+    /**
+     * Resize an existing image file
+     * 
+     * @param string $filename - The filename of the image
+     * @param string $sourcePath - Full path to source directory
+     * @param string $destinationPath - Full path to destination directory (optional, will overwrite original if not provided)
+     * @param int $maxWidth - Maximum width for resizing
+     * @param int $maxHeight - Maximum height for resizing
+     * @param int $minDimension - Minimum dimension to prevent images from becoming too small
+     * @param bool $keepOriginalName - Whether to keep the original filename
+     * @param int $quality - Image quality (1-100)
+     * @return array
+     */
+    function resizeExistingImage($filename, $sourcePath, $destinationPath = null, $maxWidth = 512, $maxHeight = 512, $minDimension = 100, $keepOriginalName = true, $quality = 85) {
+        
+        $success = false;
+        $originalDimensions = null;
+        $newDimensions = null;
+        $finalPath = null;
+        $message = 'resize completed';
+
+        try {
+            // Build full file paths
+            $sourceFilePath = $sourcePath . DIRECTORY_SEPARATOR . $filename;
+            
+            // Check if source file exists
+            if (!file_exists($sourceFilePath)) {
+                throw new Exception("Source file does not exist: {$sourceFilePath}");
+            }
+
+            // If no destination provided, overwrite the original
+            if ($destinationPath === null) {
+                $destinationPath = $sourcePath;
+            }
+
+            $imgManager = new ImageManager(new Driver());
+            $img = $imgManager->read($sourceFilePath);
+
+            // Get the original dimensions
+            $originalWidth = $img->width();
+            $originalHeight = $img->height();
+
+            // Calculate new dimensions while maintaining aspect ratio
+            $newDimensionsArray = calculateNewDimensions(
+                $originalWidth, 
+                $originalHeight, 
+                $maxWidth, 
+                $maxHeight, 
+                $minDimension
+            );
+
+            $newWidth = $newDimensionsArray['width'];
+            $newHeight = $newDimensionsArray['height'];
+
+            // Check if resize is actually needed
+            if ($originalWidth == $newWidth && $originalHeight == $newHeight) {
+                return [
+                    'success' => true,
+                    'message' => 'No resize needed - image already optimal size',
+                    'original_dimensions' => "{$originalWidth}x{$originalHeight}",
+                    'new_dimensions' => "{$newWidth}x{$newHeight}",
+                    'path' => $sourceFilePath
+                ];
+            }
+
+            // Generate filename
+            if ($keepOriginalName) {
+                $finalFilename = $filename;
+            } else {
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                $baseName = pathinfo($filename, PATHINFO_FILENAME);
+                $timestamp = time();
+                $randomString = Str::random(8);
+                $finalFilename = "{$baseName}-{$newWidth}x{$newHeight}-{$timestamp}-{$randomString}.{$ext}";
+            }
+
+            // Ensure destination directory exists
+            if (!file_exists($destinationPath)) {
+                if (!mkdir($destinationPath, 0755, true)) {
+                    throw new Exception("Failed to create directory: {$destinationPath}");
+                }
+            }
+
+            $finalPath = $destinationPath . DIRECTORY_SEPARATOR . $finalFilename;
+
+            // Resize and save the image
+            $img->resize($newWidth, $newHeight)->save($finalPath, $quality);
+
+            $originalDimensions = "{$originalWidth}x{$originalHeight}";
+            $newDimensions = "{$newWidth}x{$newHeight}";
+            $success = true;
+
+        } catch (Exception $e) {
+            $success = false;
+            $message = $e->getMessage();
+            Log::error('Image resize failed: ' . $e->getMessage());
+        }
+
+        return [
+            'success' => $success,
+            'message' => $message,
+            'original_dimensions' => $originalDimensions,
+            'new_dimensions' => $newDimensions,
+            'path' => $finalPath
+        ];
+    }
+}
+
+if (!function_exists('calculateNewDimensions')) {
+    /**
+     * Calculate new dimensions while maintaining aspect ratio
+     * 
+     * @param int $originalWidth
+     * @param int $originalHeight
+     * @param int $maxWidth
+     * @param int $maxHeight
+     * @param int $minDimension
+     * @return array
+     */
+    function calculateNewDimensions($originalWidth, $originalHeight, $maxWidth, $maxHeight, $minDimension) {
+        // If image is already smaller than max dimensions, resize to smaller size
+        if ($originalWidth <= $maxWidth && $originalHeight <= $maxHeight) {
+            $scaleFactor = 0.7; // Reduce to 70% of original size for small images
+            $newWidth = max($minDimension, (int)($originalWidth * $scaleFactor));
+            $newHeight = max($minDimension, (int)($originalHeight * $scaleFactor));
+            
+            return ['width' => $newWidth, 'height' => $newHeight];
+        }
+
+        // Calculate scale factor to fit within max dimensions
+        $scaleWidth = $maxWidth / $originalWidth;
+        $scaleHeight = $maxHeight / $originalHeight;
+        $scaleFactor = min($scaleWidth, $scaleHeight, 1); // Don't upscale
+
+        $newWidth = max($minDimension, (int)($originalWidth * $scaleFactor));
+        $newHeight = max($minDimension, (int)($originalHeight * $scaleFactor));
+
+        return ['width' => $newWidth, 'height' => $newHeight];
+    }
+}
+
+if (!function_exists('resizeImageInPlace')) {
+    /**
+     * Resize image and replace the original file
+     * 
+     * @param string $filePath - Full path to the image file
+     * @param int $maxWidth
+     * @param int $maxHeight
+     * @param int $minDimension
+     * @param int $quality
+     * @return array
+     */
+    function resizeImageInPlace($filePath, $maxWidth = 512, $maxHeight = 512, $minDimension = 100, $quality = 85) {
+        $filename = basename($filePath);
+        $directory = dirname($filePath);
+        
+        return resizeExistingImage($filename, $directory, $directory, $maxWidth, $maxHeight, $minDimension, true, $quality);
+    }
+}
+
+/**
+ * Alternative simpler version if you want to keep everything in one function
+ */
+if (!function_exists('resizeImageSimple')) {
+    function resizeImageSimple($file, $path, $maxDimension = 400) {
+        try {
+            $imgManager = new ImageManager(
+                new Intervention\Image\Drivers\Gd\Driver()
+            );
+            
+            $img = $imgManager->read($file->getRealPath());
+
+            // Get the original dimensions
+            $originalWidth = $img->width();
+            $originalHeight = $img->height();
+
+            // Calculate scale factor to fit within max dimension
+            $maxOriginal = max($originalWidth, $originalHeight);
+            $scaleFactor = min($maxDimension / $maxOriginal, 1); // Don't upscale
+
+            $newWidth = (int)($originalWidth * $scaleFactor);
+            $newHeight = (int)($originalHeight * $scaleFactor);
+
+            // Generate unique filename
+            $ext = strtolower($file->getClientOriginalExtension());
+            $fileName = $newWidth . 'x' . $newHeight . '-' . time() . '-' . Str::random(8) . '.' . $ext;
+
+            // Ensure destination directory exists
+            $destination = public_path($path);
+            if (!file_exists($destination)) {
+                mkdir($destination, 0755, true);
+            }
+
+            // Resize and save the image
+            $img->resize($newWidth, $newHeight)
+                ->save($destination . '/' . $fileName, 85);
+            
+            return "$path/$fileName";
+
+        } catch (Exception $e) {
+            Log::error('Image resize failed: ' . $e->getMessage());
+            return null; // or throw exception based on your error handling strategy
+        }
+    }
 }

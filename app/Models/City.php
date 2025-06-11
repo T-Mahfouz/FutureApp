@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class City extends Model
 {
-    protected $fillable = ['id','name','image_id'];
+    protected $guarded = [];
 
     public function config()
     {

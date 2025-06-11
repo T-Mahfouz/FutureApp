@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Migrations;
 
+use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\OldAbout;
 use App\Models\Setting;

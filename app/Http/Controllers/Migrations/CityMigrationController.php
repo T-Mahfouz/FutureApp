@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Migrations;
 
 use App\Http\Controllers\Controller;
 use App\Models\News;
@@ -209,6 +209,8 @@ class CityMigrationController extends Controller
             $newCity = new City();
             $newCity->id = $oldCity->id;
             $newCity->name = $oldCity->name;
+            $newCity->created_at = $oldCity->created_at;
+            $newCity->updated_at = $oldCity->updated_at;
             
             // Handle city image if exists
             if ($oldCity->image) {
@@ -651,6 +653,8 @@ class CityMigrationController extends Controller
                     $newNews->description = $oldNews->description;
                     $newNews->city_id = $newCity->id; // Use new city ID instead of old city_id
                     $newNews->image_id = $imageId;
+                    $newNews->created_at = $oldNews->created_at;
+                    $newNews->updated_at = $oldNews->updated_at;
                     
                     $newNews->save();
                     

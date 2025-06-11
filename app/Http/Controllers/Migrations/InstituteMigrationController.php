@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Migrations;
 
 use App\Http\Controllers\Controller;
 use App\Models\OldInstitute;
@@ -215,6 +215,8 @@ class InstituteMigrationController extends Controller
         $service->valid = $institute->valid ;
         $service->image_id = $media->id ?? null;
         $service->arrangement_order = $institute->arrange_order;
+        $service->created_at = $institute->created_at;
+        $service->updated_at = $institute->updated_at;
         $service->save();
         
         // Migrate categories

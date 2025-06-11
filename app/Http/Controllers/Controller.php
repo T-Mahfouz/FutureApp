@@ -20,6 +20,8 @@ abstract class Controller
                 return null;
             }
             
+            $imagePath = 'all_images/'.$imagePath;
+            
             // Check if media already exists
             $existingMedia = Media::where('path', $imagePath)->first();
             if ($existingMedia) {

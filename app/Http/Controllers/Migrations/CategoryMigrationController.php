@@ -1,22 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Migrations;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\News;
 use App\Models\OldCategory;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\OldCity;
-use App\Models\City;
-use App\Models\Media;
 
 class CategoryMigrationController extends Controller
 {
-    
-    
     public function migrateParents()
     {
         ini_set('max_execution_time', 600);
@@ -49,7 +42,9 @@ class CategoryMigrationController extends Controller
                         'name' => $item->name,
                         'description' => $item->description,
                         'active' => $item->active,
-                        'image_id' => $media->id ?? null
+                        'image_id' => $media->id ?? null,
+                        'created_at' => $item->created_at,
+                        'updated_at' => $item->updated_at,
                     ]);
                     $successCount++;
                 } catch (\Exception $e) {
@@ -123,7 +118,9 @@ class CategoryMigrationController extends Controller
                         'name' => $item->name,
                         'description' => $item->description,
                         'active' => $item->active,
-                        'image_id' => $media->id ?? null
+                        'image_id' => $media->id ?? null,
+                        'created_at' => $item->created_at,
+                        'updated_at' => $item->updated_at,
                     ]);
                     $successCount++;
                 } catch (\Exception $e) {

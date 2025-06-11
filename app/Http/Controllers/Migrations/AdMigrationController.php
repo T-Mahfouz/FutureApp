@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Migrations;
 
 use App\Http\Controllers\Controller;
 use App\Models\OldInstitute;
@@ -103,6 +103,8 @@ class AdMigrationController extends Controller
         $ad = new Ad([
             'name' => $institute->name,
             'city_id' => $newCityId,
+            'created_at' => $institute->created_at,
+            'updated_at' => $institute->updated_at,
             'location' => $this->determineAdLocation($institute)
         ]);
         
