@@ -8,7 +8,7 @@
 	<div class="row justify-content-md-center">
 		<div class="card-wrapper col-12 col-md-4 mt-5">
 			<div class="brand text-center mb-3">
-				<a href="{{ route('dashboard') }}"><img src="{{ asset('img/logo.png') }}"></a>
+				<a href="{{ route('dashboard') }}"><img style="height: 50%;width: 50%;" src="{{ asset('img/favicon.png') }}"></a>
 			</div>
 			<div class="card">
 				<div class="card-body">
@@ -57,11 +57,6 @@
 								{{ __('Sign In') }}
 							</button>
 						</div>
-						@if (Route::has('register'))
-						<div class="text-center mt-3 small">
-							{{ __('Don\'t have an account?') }} <a href="{{ route('register') }}">{{ __('Sign Up') }}</a>
-						</div>
-						@endif
 					</form>
 				</div>
 			</div>

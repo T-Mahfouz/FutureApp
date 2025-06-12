@@ -161,8 +161,10 @@ class NotificationController extends Controller
         $news = News::whereIn('city_id', $accessibleCityIds)
                    ->orderBy('name')
                    ->get();
-        
-        return view('notification.edit', compact('notification', 'services', 'news'));
+
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
+
+        return view('notification.edit', compact('notification', 'services', 'news', 'cities'));
     }
 
     // Show the form for editing the specified notification
@@ -194,7 +196,9 @@ class NotificationController extends Controller
                    ->orderBy('name')
                    ->get();
         
-        return view('notification.edit', compact('notification', 'services', 'news'));
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
+
+        return view('notification.edit', compact('notification', 'cities', 'services', 'news'));
     }
 
     // Save a newly created notification

@@ -1,0 +1,577 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        // First, ensure the table exists with proper structure
+        if (!Schema::hasTable('notification_cities')) {
+            Schema::create('notification_cities', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('notification_id');
+                $table->unsignedBigInteger('city_id');
+                $table->timestamps();
+                
+                // Add indexes for better performance
+                $table->index(['notification_id', 'city_id']);
+                $table->unique(['notification_id', 'city_id'], 'unique_notification_city');
+            });
+        }
+
+        // Insert the data with error handling
+        $this->insertNotificationCitiesData();
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // Remove only the data that was inserted by this migration
+        // You can identify them by the specific notification_id range if needed
+        DB::table('notification_cities')
+            ->whereBetween('notification_id', [4689, 5145])
+            ->where('city_id', 9)
+            ->delete();
+    }
+    
+    private function insertNotificationCitiesData(): void
+    {
+        $data = [
+            ['notification_id' => 4689, 'city_id' => 9],
+            ['notification_id' => 4690, 'city_id' => 9],
+            ['notification_id' => 4691, 'city_id' => 9],
+            ['notification_id' => 4692, 'city_id' => 9],
+            ['notification_id' => 4693, 'city_id' => 9],
+            ['notification_id' => 4695, 'city_id' => 9],
+            ['notification_id' => 4696, 'city_id' => 9],
+            ['notification_id' => 4697, 'city_id' => 9],
+            ['notification_id' => 4698, 'city_id' => 9],
+            ['notification_id' => 4699, 'city_id' => 9],
+            ['notification_id' => 4700, 'city_id' => 9],
+            ['notification_id' => 4701, 'city_id' => 9],
+            ['notification_id' => 4702, 'city_id' => 9],
+            ['notification_id' => 4703, 'city_id' => 9],
+            ['notification_id' => 4704, 'city_id' => 9],
+            ['notification_id' => 4705, 'city_id' => 9],
+            ['notification_id' => 4706, 'city_id' => 9],
+            ['notification_id' => 4707, 'city_id' => 9],
+            ['notification_id' => 4709, 'city_id' => 9],
+            ['notification_id' => 4710, 'city_id' => 9],
+            ['notification_id' => 4711, 'city_id' => 9],
+            ['notification_id' => 4712, 'city_id' => 9],
+            ['notification_id' => 4713, 'city_id' => 9],
+            ['notification_id' => 4714, 'city_id' => 9],
+            ['notification_id' => 4708, 'city_id' => 9],
+            ['notification_id' => 4715, 'city_id' => 9],
+            ['notification_id' => 4716, 'city_id' => 9],
+            ['notification_id' => 4717, 'city_id' => 9],
+            ['notification_id' => 4718, 'city_id' => 9],
+            ['notification_id' => 4719, 'city_id' => 9],
+            ['notification_id' => 4720, 'city_id' => 9],
+            ['notification_id' => 4721, 'city_id' => 9],
+            ['notification_id' => 4722, 'city_id' => 9],
+            ['notification_id' => 4723, 'city_id' => 9],
+            ['notification_id' => 4724, 'city_id' => 9],
+            ['notification_id' => 4725, 'city_id' => 9],
+            ['notification_id' => 4726, 'city_id' => 9],
+            ['notification_id' => 4727, 'city_id' => 9],
+            ['notification_id' => 4728, 'city_id' => 9],
+            ['notification_id' => 4729, 'city_id' => 9],
+            ['notification_id' => 4730, 'city_id' => 9],
+            ['notification_id' => 4731, 'city_id' => 9],
+            ['notification_id' => 4732, 'city_id' => 9],
+            ['notification_id' => 4733, 'city_id' => 9],
+            ['notification_id' => 4734, 'city_id' => 9],
+            ['notification_id' => 4735, 'city_id' => 9],
+            ['notification_id' => 4736, 'city_id' => 9],
+            ['notification_id' => 4737, 'city_id' => 9],
+            ['notification_id' => 4738, 'city_id' => 9],
+            ['notification_id' => 4739, 'city_id' => 9],
+            ['notification_id' => 4740, 'city_id' => 9],
+            ['notification_id' => 4742, 'city_id' => 9],
+            ['notification_id' => 4743, 'city_id' => 9],
+            ['notification_id' => 4744, 'city_id' => 9],
+            ['notification_id' => 4745, 'city_id' => 9],
+            ['notification_id' => 4746, 'city_id' => 9],
+            ['notification_id' => 4747, 'city_id' => 9],
+            ['notification_id' => 4748, 'city_id' => 9],
+            ['notification_id' => 4749, 'city_id' => 9],
+            ['notification_id' => 4750, 'city_id' => 9],
+            ['notification_id' => 4751, 'city_id' => 9],
+            ['notification_id' => 4752, 'city_id' => 9],
+            ['notification_id' => 4753, 'city_id' => 9],
+            ['notification_id' => 4754, 'city_id' => 9],
+            ['notification_id' => 4755, 'city_id' => 9],
+            ['notification_id' => 4756, 'city_id' => 9],
+            ['notification_id' => 4757, 'city_id' => 9],
+            ['notification_id' => 4758, 'city_id' => 9],
+            ['notification_id' => 4759, 'city_id' => 9],
+            ['notification_id' => 4760, 'city_id' => 9],
+            ['notification_id' => 4761, 'city_id' => 9],
+            ['notification_id' => 4762, 'city_id' => 9],
+            ['notification_id' => 4763, 'city_id' => 9],
+            ['notification_id' => 4764, 'city_id' => 9],
+            ['notification_id' => 4765, 'city_id' => 9],
+            ['notification_id' => 4766, 'city_id' => 9],
+            ['notification_id' => 4767, 'city_id' => 9],
+            ['notification_id' => 4768, 'city_id' => 9],
+            ['notification_id' => 4769, 'city_id' => 9],
+            ['notification_id' => 4770, 'city_id' => 9],
+            ['notification_id' => 4771, 'city_id' => 9],
+            ['notification_id' => 4772, 'city_id' => 9],
+            ['notification_id' => 4773, 'city_id' => 9],
+            ['notification_id' => 4774, 'city_id' => 9],
+            ['notification_id' => 4775, 'city_id' => 9],
+            ['notification_id' => 4776, 'city_id' => 9],
+            ['notification_id' => 4777, 'city_id' => 9],
+            ['notification_id' => 4778, 'city_id' => 9],
+            ['notification_id' => 4779, 'city_id' => 9],
+            ['notification_id' => 4780, 'city_id' => 9],
+            ['notification_id' => 4781, 'city_id' => 9],
+            ['notification_id' => 4782, 'city_id' => 9],
+            ['notification_id' => 4783, 'city_id' => 9],
+            ['notification_id' => 4784, 'city_id' => 9],
+            ['notification_id' => 4785, 'city_id' => 9],
+            ['notification_id' => 4786, 'city_id' => 9],
+            ['notification_id' => 4787, 'city_id' => 9],
+            ['notification_id' => 4788, 'city_id' => 9],
+            ['notification_id' => 4789, 'city_id' => 9],
+            ['notification_id' => 4790, 'city_id' => 9],
+            ['notification_id' => 4791, 'city_id' => 9],
+            ['notification_id' => 4792, 'city_id' => 9],
+            ['notification_id' => 4793, 'city_id' => 9],
+            ['notification_id' => 4794, 'city_id' => 9],
+            ['notification_id' => 4795, 'city_id' => 9],
+            ['notification_id' => 4796, 'city_id' => 9],
+            ['notification_id' => 4797, 'city_id' => 9],
+            ['notification_id' => 4798, 'city_id' => 9],
+            ['notification_id' => 4799, 'city_id' => 9],
+            ['notification_id' => 4800, 'city_id' => 9],
+            ['notification_id' => 4801, 'city_id' => 9],
+            ['notification_id' => 4802, 'city_id' => 9],
+            ['notification_id' => 4803, 'city_id' => 9],
+            ['notification_id' => 4804, 'city_id' => 9],
+            ['notification_id' => 4805, 'city_id' => 9],
+            ['notification_id' => 4806, 'city_id' => 9],
+            ['notification_id' => 4807, 'city_id' => 9],
+            ['notification_id' => 4808, 'city_id' => 9],
+            ['notification_id' => 4809, 'city_id' => 9],
+            ['notification_id' => 4810, 'city_id' => 9],
+            ['notification_id' => 4811, 'city_id' => 9],
+            ['notification_id' => 4812, 'city_id' => 9],
+            ['notification_id' => 4813, 'city_id' => 9],
+            ['notification_id' => 4814, 'city_id' => 9],
+            ['notification_id' => 4815, 'city_id' => 9],
+            ['notification_id' => 4816, 'city_id' => 9],
+            ['notification_id' => 4817, 'city_id' => 9],
+            ['notification_id' => 4818, 'city_id' => 9],
+            ['notification_id' => 4819, 'city_id' => 9],
+            ['notification_id' => 4820, 'city_id' => 9],
+            ['notification_id' => 4821, 'city_id' => 9],
+            ['notification_id' => 4822, 'city_id' => 9],
+            ['notification_id' => 4823, 'city_id' => 9],
+            ['notification_id' => 4824, 'city_id' => 9],
+            ['notification_id' => 4825, 'city_id' => 9],
+            ['notification_id' => 4826, 'city_id' => 9],
+            ['notification_id' => 4827, 'city_id' => 9],
+            ['notification_id' => 4828, 'city_id' => 9],
+            ['notification_id' => 4829, 'city_id' => 9],
+            ['notification_id' => 4830, 'city_id' => 9],
+            ['notification_id' => 4831, 'city_id' => 9],
+            ['notification_id' => 4832, 'city_id' => 9],
+            ['notification_id' => 4833, 'city_id' => 9],
+            ['notification_id' => 4834, 'city_id' => 9],
+            ['notification_id' => 4835, 'city_id' => 9],
+            ['notification_id' => 4836, 'city_id' => 9],
+            ['notification_id' => 4837, 'city_id' => 9],
+            ['notification_id' => 4838, 'city_id' => 9],
+            ['notification_id' => 4839, 'city_id' => 9],
+            ['notification_id' => 4840, 'city_id' => 9],
+            ['notification_id' => 4841, 'city_id' => 9],
+            ['notification_id' => 4842, 'city_id' => 9],
+            ['notification_id' => 4843, 'city_id' => 9],
+            ['notification_id' => 4844, 'city_id' => 9],
+            ['notification_id' => 4845, 'city_id' => 9],
+            ['notification_id' => 4846, 'city_id' => 9],
+            ['notification_id' => 4847, 'city_id' => 9],
+            ['notification_id' => 4848, 'city_id' => 9],
+            ['notification_id' => 4849, 'city_id' => 9],
+            ['notification_id' => 4850, 'city_id' => 9],
+            ['notification_id' => 4851, 'city_id' => 9],
+            ['notification_id' => 4852, 'city_id' => 9],
+            ['notification_id' => 4853, 'city_id' => 9],
+            ['notification_id' => 4854, 'city_id' => 9],
+            ['notification_id' => 4855, 'city_id' => 9],
+            ['notification_id' => 4856, 'city_id' => 9],
+            ['notification_id' => 4857, 'city_id' => 9],
+            ['notification_id' => 4858, 'city_id' => 9],
+            ['notification_id' => 4859, 'city_id' => 9],
+            ['notification_id' => 4860, 'city_id' => 9],
+            ['notification_id' => 4861, 'city_id' => 9],
+            ['notification_id' => 4862, 'city_id' => 9],
+            ['notification_id' => 4863, 'city_id' => 9],
+            ['notification_id' => 4864, 'city_id' => 9],
+            ['notification_id' => 4865, 'city_id' => 9],
+            ['notification_id' => 4866, 'city_id' => 9],
+            ['notification_id' => 4867, 'city_id' => 9],
+            ['notification_id' => 4868, 'city_id' => 9],
+            ['notification_id' => 4869, 'city_id' => 9],
+            ['notification_id' => 4870, 'city_id' => 9],
+            ['notification_id' => 4871, 'city_id' => 9],
+            ['notification_id' => 4872, 'city_id' => 9],
+            ['notification_id' => 4873, 'city_id' => 9],
+            ['notification_id' => 4874, 'city_id' => 9],
+            ['notification_id' => 4875, 'city_id' => 9],
+            ['notification_id' => 4876, 'city_id' => 9],
+            ['notification_id' => 4877, 'city_id' => 9],
+            ['notification_id' => 4878, 'city_id' => 9],
+            ['notification_id' => 4879, 'city_id' => 9],
+            ['notification_id' => 4880, 'city_id' => 9],
+            ['notification_id' => 4881, 'city_id' => 9],
+            ['notification_id' => 4882, 'city_id' => 9],
+            ['notification_id' => 4883, 'city_id' => 9],
+            ['notification_id' => 4884, 'city_id' => 9],
+            ['notification_id' => 4885, 'city_id' => 9],
+            ['notification_id' => 4887, 'city_id' => 9],
+            ['notification_id' => 4888, 'city_id' => 9],
+            ['notification_id' => 4889, 'city_id' => 9],
+            ['notification_id' => 4890, 'city_id' => 9],
+            ['notification_id' => 4891, 'city_id' => 9],
+            ['notification_id' => 4892, 'city_id' => 9],
+            ['notification_id' => 4893, 'city_id' => 9],
+            ['notification_id' => 4894, 'city_id' => 9],
+            ['notification_id' => 4895, 'city_id' => 9],
+            ['notification_id' => 4896, 'city_id' => 9],
+            ['notification_id' => 4897, 'city_id' => 9],
+            ['notification_id' => 4898, 'city_id' => 9],
+            ['notification_id' => 4899, 'city_id' => 9],
+            ['notification_id' => 4900, 'city_id' => 9],
+            ['notification_id' => 4901, 'city_id' => 9],
+            ['notification_id' => 4902, 'city_id' => 9],
+            ['notification_id' => 4903, 'city_id' => 9],
+            ['notification_id' => 4904, 'city_id' => 9],
+            ['notification_id' => 4905, 'city_id' => 9],
+            ['notification_id' => 4906, 'city_id' => 9],
+            ['notification_id' => 4907, 'city_id' => 9],
+            ['notification_id' => 4908, 'city_id' => 9],
+            ['notification_id' => 4909, 'city_id' => 9],
+            ['notification_id' => 4910, 'city_id' => 9],
+            ['notification_id' => 4911, 'city_id' => 9],
+            ['notification_id' => 4912, 'city_id' => 9],
+            ['notification_id' => 4913, 'city_id' => 9],
+            ['notification_id' => 4914, 'city_id' => 9],
+            ['notification_id' => 4915, 'city_id' => 9],
+            ['notification_id' => 4916, 'city_id' => 9],
+            ['notification_id' => 4918, 'city_id' => 9],
+            ['notification_id' => 4919, 'city_id' => 9],
+            ['notification_id' => 4917, 'city_id' => 9],
+            ['notification_id' => 4920, 'city_id' => 9],
+            ['notification_id' => 4921, 'city_id' => 9],
+            ['notification_id' => 4922, 'city_id' => 9],
+            ['notification_id' => 4923, 'city_id' => 9],
+            ['notification_id' => 4924, 'city_id' => 9],
+            ['notification_id' => 4925, 'city_id' => 9],
+            ['notification_id' => 4926, 'city_id' => 9],
+            ['notification_id' => 4927, 'city_id' => 9],
+            ['notification_id' => 4928, 'city_id' => 9],
+            ['notification_id' => 4929, 'city_id' => 9],
+            ['notification_id' => 4930, 'city_id' => 9],
+            ['notification_id' => 4931, 'city_id' => 9],
+            ['notification_id' => 4932, 'city_id' => 9],
+            ['notification_id' => 4933, 'city_id' => 9],
+            ['notification_id' => 4934, 'city_id' => 9],
+            ['notification_id' => 4935, 'city_id' => 9],
+            ['notification_id' => 4936, 'city_id' => 9],
+            ['notification_id' => 4937, 'city_id' => 9],
+            ['notification_id' => 4938, 'city_id' => 9],
+            ['notification_id' => 4939, 'city_id' => 9],
+            ['notification_id' => 4940, 'city_id' => 9],
+            ['notification_id' => 4941, 'city_id' => 9],
+            ['notification_id' => 4942, 'city_id' => 9],
+            ['notification_id' => 4943, 'city_id' => 9],
+            ['notification_id' => 4944, 'city_id' => 9],
+            ['notification_id' => 4945, 'city_id' => 9],
+            ['notification_id' => 4946, 'city_id' => 9],
+            ['notification_id' => 4947, 'city_id' => 9],
+            ['notification_id' => 4948, 'city_id' => 9],
+            ['notification_id' => 4949, 'city_id' => 9],
+            ['notification_id' => 4950, 'city_id' => 9],
+            ['notification_id' => 4951, 'city_id' => 9],
+            ['notification_id' => 4952, 'city_id' => 9],
+            ['notification_id' => 4953, 'city_id' => 9],
+            ['notification_id' => 4954, 'city_id' => 9],
+            ['notification_id' => 4955, 'city_id' => 9],
+            ['notification_id' => 4956, 'city_id' => 9],
+            ['notification_id' => 4957, 'city_id' => 9],
+            ['notification_id' => 4958, 'city_id' => 9],
+            ['notification_id' => 4959, 'city_id' => 9],
+            ['notification_id' => 4960, 'city_id' => 9],
+            ['notification_id' => 4961, 'city_id' => 9],
+            ['notification_id' => 4962, 'city_id' => 9],
+            ['notification_id' => 4963, 'city_id' => 9],
+            ['notification_id' => 4964, 'city_id' => 9],
+            ['notification_id' => 4965, 'city_id' => 9],
+            ['notification_id' => 4966, 'city_id' => 9],
+            ['notification_id' => 4967, 'city_id' => 9],
+            ['notification_id' => 4968, 'city_id' => 9],
+            ['notification_id' => 4969, 'city_id' => 9],
+            ['notification_id' => 4970, 'city_id' => 9],
+            ['notification_id' => 4971, 'city_id' => 9],
+            ['notification_id' => 4972, 'city_id' => 9],
+            ['notification_id' => 4973, 'city_id' => 9],
+            ['notification_id' => 4974, 'city_id' => 9],
+            ['notification_id' => 4975, 'city_id' => 9],
+            ['notification_id' => 4976, 'city_id' => 9],
+            ['notification_id' => 4977, 'city_id' => 9],
+            ['notification_id' => 4978, 'city_id' => 9],
+            ['notification_id' => 4979, 'city_id' => 9],
+            ['notification_id' => 4980, 'city_id' => 9],
+            ['notification_id' => 4981, 'city_id' => 9],
+            ['notification_id' => 4982, 'city_id' => 9],
+            ['notification_id' => 4983, 'city_id' => 9],
+            ['notification_id' => 4984, 'city_id' => 9],
+            ['notification_id' => 4985, 'city_id' => 9],
+            ['notification_id' => 4986, 'city_id' => 9],
+            ['notification_id' => 4987, 'city_id' => 9],
+            ['notification_id' => 4988, 'city_id' => 9],
+            ['notification_id' => 4989, 'city_id' => 9],
+            ['notification_id' => 4990, 'city_id' => 9],
+            ['notification_id' => 4991, 'city_id' => 9],
+            ['notification_id' => 4992, 'city_id' => 9],
+            ['notification_id' => 4993, 'city_id' => 9],
+            ['notification_id' => 4994, 'city_id' => 9],
+            ['notification_id' => 4995, 'city_id' => 9],
+            ['notification_id' => 4996, 'city_id' => 9],
+            ['notification_id' => 4997, 'city_id' => 9],
+            ['notification_id' => 4998, 'city_id' => 9],
+            ['notification_id' => 4999, 'city_id' => 9],
+            ['notification_id' => 5000, 'city_id' => 9],
+            ['notification_id' => 5001, 'city_id' => 9],
+            ['notification_id' => 5002, 'city_id' => 9],
+            ['notification_id' => 5003, 'city_id' => 9],
+            ['notification_id' => 5004, 'city_id' => 9],
+            ['notification_id' => 5005, 'city_id' => 9],
+            ['notification_id' => 5006, 'city_id' => 9],
+            ['notification_id' => 5007, 'city_id' => 9],
+            ['notification_id' => 5008, 'city_id' => 9],
+            ['notification_id' => 5009, 'city_id' => 9],
+            ['notification_id' => 5010, 'city_id' => 9],
+            ['notification_id' => 5011, 'city_id' => 9],
+            ['notification_id' => 5012, 'city_id' => 9],
+            ['notification_id' => 5013, 'city_id' => 9],
+            ['notification_id' => 5014, 'city_id' => 9],
+            ['notification_id' => 5015, 'city_id' => 9],
+            ['notification_id' => 5016, 'city_id' => 9],
+            ['notification_id' => 5017, 'city_id' => 9],
+            ['notification_id' => 5018, 'city_id' => 9],
+            ['notification_id' => 5019, 'city_id' => 9],
+            ['notification_id' => 5020, 'city_id' => 9],
+            ['notification_id' => 5021, 'city_id' => 9],
+            ['notification_id' => 5022, 'city_id' => 9],
+            ['notification_id' => 5023, 'city_id' => 9],
+            ['notification_id' => 5024, 'city_id' => 9],
+            ['notification_id' => 5025, 'city_id' => 9],
+            ['notification_id' => 5027, 'city_id' => 9],
+            ['notification_id' => 5028, 'city_id' => 9],
+            ['notification_id' => 5029, 'city_id' => 9],
+            ['notification_id' => 5030, 'city_id' => 9],
+            ['notification_id' => 5031, 'city_id' => 9],
+            ['notification_id' => 5033, 'city_id' => 9],
+            ['notification_id' => 5034, 'city_id' => 9],
+            ['notification_id' => 5035, 'city_id' => 9],
+            ['notification_id' => 5036, 'city_id' => 9],
+            ['notification_id' => 5037, 'city_id' => 9],
+            ['notification_id' => 5038, 'city_id' => 9],
+            ['notification_id' => 5041, 'city_id' => 9],
+            ['notification_id' => 5042, 'city_id' => 9],
+            ['notification_id' => 5043, 'city_id' => 9],
+            ['notification_id' => 5044, 'city_id' => 9],
+            ['notification_id' => 5045, 'city_id' => 9],
+            ['notification_id' => 5046, 'city_id' => 9],
+            ['notification_id' => 5047, 'city_id' => 9],
+            ['notification_id' => 5048, 'city_id' => 9],
+            ['notification_id' => 5049, 'city_id' => 9],
+            ['notification_id' => 5050, 'city_id' => 9],
+            ['notification_id' => 5051, 'city_id' => 9],
+            ['notification_id' => 5052, 'city_id' => 9],
+            ['notification_id' => 5053, 'city_id' => 9],
+            ['notification_id' => 5054, 'city_id' => 9],
+            ['notification_id' => 5055, 'city_id' => 9],
+            ['notification_id' => 5056, 'city_id' => 9],
+            ['notification_id' => 5057, 'city_id' => 9],
+            ['notification_id' => 5058, 'city_id' => 9],
+            ['notification_id' => 5059, 'city_id' => 9],
+            ['notification_id' => 5060, 'city_id' => 9],
+            ['notification_id' => 5061, 'city_id' => 9],
+            ['notification_id' => 5062, 'city_id' => 9],
+            ['notification_id' => 5063, 'city_id' => 9],
+            ['notification_id' => 5064, 'city_id' => 9],
+            ['notification_id' => 5065, 'city_id' => 9],
+            ['notification_id' => 5066, 'city_id' => 9],
+            ['notification_id' => 5067, 'city_id' => 9],
+            ['notification_id' => 5068, 'city_id' => 9],
+            ['notification_id' => 5069, 'city_id' => 9],
+            ['notification_id' => 5070, 'city_id' => 9],
+            ['notification_id' => 5071, 'city_id' => 9],
+            ['notification_id' => 5072, 'city_id' => 9],
+            ['notification_id' => 5073, 'city_id' => 9],
+            ['notification_id' => 5074, 'city_id' => 9],
+            ['notification_id' => 5075, 'city_id' => 9],
+            ['notification_id' => 5076, 'city_id' => 9],
+            ['notification_id' => 5077, 'city_id' => 9],
+            ['notification_id' => 5078, 'city_id' => 9],
+            ['notification_id' => 5079, 'city_id' => 9],
+            ['notification_id' => 5080, 'city_id' => 9],
+            ['notification_id' => 5081, 'city_id' => 9],
+            ['notification_id' => 5082, 'city_id' => 9],
+            ['notification_id' => 5083, 'city_id' => 9],
+            ['notification_id' => 5084, 'city_id' => 9],
+            ['notification_id' => 5085, 'city_id' => 9],
+            ['notification_id' => 5086, 'city_id' => 9],
+            ['notification_id' => 5087, 'city_id' => 9],
+            ['notification_id' => 5088, 'city_id' => 9],
+            ['notification_id' => 5089, 'city_id' => 9],
+            ['notification_id' => 5090, 'city_id' => 9],
+            ['notification_id' => 5091, 'city_id' => 9],
+            ['notification_id' => 5092, 'city_id' => 9],
+            ['notification_id' => 5093, 'city_id' => 9],
+            ['notification_id' => 5094, 'city_id' => 9],
+            ['notification_id' => 5095, 'city_id' => 9],
+            ['notification_id' => 5096, 'city_id' => 9],
+            ['notification_id' => 5097, 'city_id' => 9],
+            ['notification_id' => 5098, 'city_id' => 9],
+            ['notification_id' => 5099, 'city_id' => 9],
+            ['notification_id' => 5100, 'city_id' => 9],
+            ['notification_id' => 5101, 'city_id' => 9],
+            ['notification_id' => 5102, 'city_id' => 9],
+            ['notification_id' => 5103, 'city_id' => 9],
+            ['notification_id' => 5104, 'city_id' => 9],
+            ['notification_id' => 5105, 'city_id' => 9],
+            ['notification_id' => 5106, 'city_id' => 9],
+            ['notification_id' => 5107, 'city_id' => 9],
+            ['notification_id' => 5108, 'city_id' => 9],
+            ['notification_id' => 5109, 'city_id' => 9],
+            ['notification_id' => 5110, 'city_id' => 9],
+            ['notification_id' => 5111, 'city_id' => 9],
+            ['notification_id' => 5112, 'city_id' => 9],
+            ['notification_id' => 5113, 'city_id' => 9],
+            ['notification_id' => 5115, 'city_id' => 9],
+            ['notification_id' => 5116, 'city_id' => 9],
+            ['notification_id' => 5117, 'city_id' => 9],
+            ['notification_id' => 5118, 'city_id' => 9],
+            ['notification_id' => 5119, 'city_id' => 9],
+            ['notification_id' => 5120, 'city_id' => 9],
+            ['notification_id' => 5121, 'city_id' => 9],
+            ['notification_id' => 5122, 'city_id' => 9],
+            ['notification_id' => 5123, 'city_id' => 9],
+            ['notification_id' => 5124, 'city_id' => 9],
+            ['notification_id' => 5125, 'city_id' => 9],
+            ['notification_id' => 5126, 'city_id' => 9],
+            ['notification_id' => 5127, 'city_id' => 9],
+            ['notification_id' => 5128, 'city_id' => 9],
+            ['notification_id' => 5129, 'city_id' => 9],
+            ['notification_id' => 5130, 'city_id' => 9],
+            ['notification_id' => 5131, 'city_id' => 9],
+            ['notification_id' => 5132, 'city_id' => 9],
+            ['notification_id' => 5133, 'city_id' => 9],
+            ['notification_id' => 5134, 'city_id' => 9],
+            ['notification_id' => 5135, 'city_id' => 9],
+            ['notification_id' => 5136, 'city_id' => 9],
+            ['notification_id' => 5137, 'city_id' => 9],
+            ['notification_id' => 5138, 'city_id' => 9],
+            ['notification_id' => 5139, 'city_id' => 9],
+            ['notification_id' => 5140, 'city_id' => 9],
+            ['notification_id' => 5141, 'city_id' => 9],
+            ['notification_id' => 5142, 'city_id' => 9],
+            ['notification_id' => 5143, 'city_id' => 9],
+            ['notification_id' => 5144, 'city_id' => 9],
+            ['notification_id' => 5145, 'city_id' => 9],
+        ];
+
+        $inserted = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        // Process data in chunks for better performance
+        $chunks = array_chunk($data, 100);
+        
+        foreach ($chunks as $chunk) {
+            try {
+                // Prepare data with timestamps
+                $insertData = array_map(function($item) {
+                    return [
+                        'notification_id' => $item['notification_id'],
+                        'city_id' => $item['city_id'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }, $chunk);
+
+                // Use upsert to handle duplicates gracefully
+                $result = DB::table('notification_cities')->upsert(
+                    $insertData,
+                    ['notification_id', 'city_id'], // Unique columns
+                    ['updated_at'] // Columns to update if exists
+                );
+
+                $inserted += $result;
+
+            } catch (\Exception $e) {
+                // If bulk insert fails, try individual inserts
+                foreach ($chunk as $item) {
+                    try {
+                        $exists = DB::table('notification_cities')
+                            ->where('notification_id', $item['notification_id'])
+                            ->where('city_id', $item['city_id'])
+                            ->exists();
+
+                        if (!$exists) {
+                            DB::table('notification_cities')->insert([
+                                'notification_id' => $item['notification_id'],
+                                'city_id' => $item['city_id'],
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            $inserted++;
+                        } else {
+                            $skipped++;
+                        }
+
+                    } catch (\Exception $individualError) {
+                        $failed++;
+                        Log::warning('Failed to insert notification city record', [
+                            'notification_id' => $item['notification_id'],
+                            'city_id' => $item['city_id'],
+                            'error' => $individualError->getMessage()
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Log the results
+        Log::info('Notification cities migration completed', [
+            'total_records' => count($data),
+            'inserted' => $inserted,
+            'skipped' => $skipped,
+            'failed' => $failed
+        ]);
+
+        echo "Migration completed:\n";
+        echo "- Total records: " . count($data) . "\n";
+        echo "- Inserted: $inserted\n";
+        echo "- Skipped: $skipped\n";
+        echo "- Failed: $failed\n";
+
+    }
+};
