@@ -8,17 +8,50 @@ use App\Models\Ad;
 use App\Models\City;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class AdController extends Controller
 {
+    /**
+     * Get cities that the current admin can access
+     */
+    private function getAccessibleCityIds()
+    {
+        $admin = Auth::guard('admin')->user();
+        $adminCities = $admin->cities();
+        
+        // If admin has no city assignments, they can access all cities (super admin)
+        if ($adminCities->count() == 0) {
+            return City::pluck('id')->toArray();
+        }
+        
+        // Otherwise, return only assigned cities
+        return $adminCities->pluck('cities.id')->toArray();
+    }
+
+    /**
+     * Apply city restriction to query
+     */
+    private function applyCityRestriction($query)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        return $query->whereIn('city_id', $accessibleCityIds);
+    }
+
     // Show all ads
     public function index(Request $request)
     {
         $query = Ad::with(['city', 'image']);
         
-        // Filter by city if provided
+        // Apply city restriction based on admin's assigned cities
+        $query = $this->applyCityRestriction($query);
+        
+        // Filter by city if provided (only show cities admin has access to)
         if ($request->has('city_id') && $request->city_id) {
-            $query->where('city_id', $request->city_id);
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (in_array($request->city_id, $accessibleCityIds)) {
+                $query->where('city_id', $request->city_id);
+            }
         }
         
         // Filter by location if provided
@@ -33,7 +66,10 @@ class AdController extends Controller
         }
         
         $ads = $query->latest()->paginate(25);
-        $cities = City::all();
+        
+        // Only show cities admin has access to in filter dropdown
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
         
         return view('ad.index', compact('ads', 'cities'));
     }
@@ -42,14 +78,26 @@ class AdController extends Controller
     public function create()
     {
         $ad = new Ad();
-        $cities = City::all();
+        
+        // Only show cities admin has access to
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        
         return view('ad.edit', compact('ad', 'cities'));
     }
 
     // Show the form for editing the specified ad
     public function edit(Ad $ad)
     {
-        $cities = City::all();
+        // Check if admin has access to this ad's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($ad->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to edit this ad.');
+        }
+
+        // Only show cities admin has access to
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        
         return view('ad.edit', compact('ad', 'cities'));
     }
 
@@ -63,11 +111,25 @@ class AdController extends Controller
     // Update the specified ad
     public function update(Request $request, Ad $ad)
     {
+        // For existing ads, check if admin has access to this ad's city
+        if ($ad->exists) {
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (!in_array($ad->city_id, $accessibleCityIds)) {
+                abort(403, 'You do not have permission to edit this ad.');
+            }
+        }
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
             'location' => 'required|in:home,category_profile,service_profile',
-            'city_id' => 'required|exists:cities,id',
+            'city_id' => ['required', 'exists:cities,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                if (!in_array($value, $accessibleCityIds)) {
+                    $fail('You do not have permission to create/edit ads in this city.');
+                }
+            }],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
@@ -108,6 +170,12 @@ class AdController extends Controller
     // Show the specified ad details
     public function show(Ad $ad)
     {
+        // Check if admin has access to this ad's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($ad->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to view this ad.');
+        }
+
         $ad->load(['city', 'image']);
         return view('ad.show', compact('ad'));
     }
@@ -115,6 +183,12 @@ class AdController extends Controller
     // Delete the specified ad
     public function destroy(Ad $ad)
     {
+        // Check if admin has access to this ad's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($ad->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to delete this ad.');
+        }
+
         // Delete image if exists
         if($ad->image){
             Storage::disk('public')->delete($ad->image->path);
@@ -137,11 +211,19 @@ class AdController extends Controller
             'ad_ids.*' => 'exists:ads,id'
         ]);
 
-        $ads = Ad::whereIn('id', $request->ad_ids);
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        // Only get ads that are in accessible cities
+        $ads = Ad::whereIn('id', $request->ad_ids)
+                ->whereIn('city_id', $accessibleCityIds);
+
+        $adsToProcess = $ads->get();
+        $processedCount = $adsToProcess->count();
+        $totalRequested = count($request->ad_ids);
 
         if ($request->action === 'delete') {
-            // Delete images for selected ads
-            foreach ($ads->get() as $ad) {
+            // Delete images for selected ads (only accessible ones)
+            foreach ($adsToProcess as $ad) {
                 if($ad->image){
                     Storage::disk('public')->delete($ad->image->path);
                     $ad->image->delete();
@@ -149,9 +231,25 @@ class AdController extends Controller
             }
             
             $ads->delete();
-            $message = 'Selected ads deleted successfully';
+            
+            if ($processedCount < $totalRequested) {
+                $skipped = $totalRequested - $processedCount;
+                $message = "Deleted {$processedCount} ads successfully. {$skipped} ads were skipped (no permission).";
+            } else {
+                $message = "Deleted {$processedCount} ads successfully.";
+            }
         }
 
         return redirect()->route('ad.index')->with('status', $message);
+    }
+
+    // Additional method to get location options (for consistency)
+    public function getLocationOptions()
+    {
+        return [
+            'home' => 'Home Page',
+            'category_profile' => 'Category Profile',
+            'service_profile' => 'Service Profile'
+        ];
     }
 }

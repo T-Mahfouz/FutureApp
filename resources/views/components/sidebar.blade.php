@@ -16,7 +16,12 @@
 	</li>
 	<!-- End Dashboard -->
 	
-	<!-- Analytics -->
+	@php
+		$adminHasCityAssignments = Auth::guard('admin')->user()->cities()->count() > 0;
+	@endphp
+	
+	@if(!$adminHasCityAssignments)
+	<!-- Analytics - Only for Super Admins -->
 	<li class="side-nav-menu-item {{ Request::is('analytics*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="{{ route('analytics') }}">
 			<span class="side-nav-menu-icon d-flex mr-3">
@@ -27,7 +32,7 @@
 	</li>
 	<!-- End Analytics -->
 
-	<!-- Title -->
+	<!-- Title - Administration (Only for Super Admins) -->
 	<li class="sidebar-heading h6">Administration</li>
 	<!-- End Title -->
 	
@@ -58,7 +63,7 @@
 	</li>
 	<!-- End Admins -->
 	
-	<!-- Title -->
+	<!-- Title - Users (Only for Super Admins) -->
 	<li class="sidebar-heading h6">Users</li>
 	<!-- End Title -->
 	
@@ -89,7 +94,7 @@
 	</li>
 	<!-- End Users -->
 	
-	<!-- Title -->
+	<!-- Title - Content Management (Only for Super Admins) -->
 	<li class="sidebar-heading h6">Content Management</li>
 	<!-- End Title -->
 	
@@ -120,61 +125,7 @@
 	</li>
 	<!-- End Cities -->
 
-	{{-- <!-- Services -->
-	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('service*') || Request::is('services*') ? 'active' : '' }}">
-		<a class="side-nav-menu-link media align-items-center" href="#"
-		data-target="#subServices">
-		<span class="side-nav-menu-icon d-flex mr-3">
-			<i class="gd-layers"></i>
-		</span>
-		<span class="side-nav-fadeout-on-closed media-body">Services</span>
-		<span class="side-nav-control-icon d-flex">
-			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
-		</span>
-		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
-		</a>
-
-		<!-- Services: sub -->
-		<ul id="subServices" class="side-nav-menu side-nav-menu-second-level mb-0">
-		<li class="side-nav-menu-item {{ (Request::is('service') || Request::is('services')) && !Request::is('service/create') && !Request::is('services/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('service.index') }}">All Services</a>
-		</li>
-		<li class="side-nav-menu-item {{ Request::is('service/create') || Request::is('services/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('service.create') }}">Add Service</a>
-		</li>
-		</ul>
-		<!-- Services: sub -->
-	</li>
-	<!-- End Services --> --}}
-	<!-- Services -->
-	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('service*') || Request::is('services*') ? 'active' : '' }}">
-		<a class="side-nav-menu-link media align-items-center" href="#"
-		data-target="#subServices">
-		<span class="side-nav-menu-icon d-flex mr-3">
-			<i class="gd-layers"></i>
-		</span>
-		<span class="side-nav-fadeout-on-closed media-body">Services</span>
-		<span class="side-nav-control-icon d-flex">
-			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
-		</span>
-		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
-		</a>
-
-		<!-- Services: sub -->
-		<ul id="subServices" class="side-nav-menu side-nav-menu-second-level mb-0">
-		<li class="side-nav-menu-item {{ (Request::is('service') || Request::is('services')) && !Request::is('service/create') && !Request::is('services/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('service.index') }}">All Services</a>
-		</li>
-		<li class="side-nav-menu-item {{ Request::is('service/create') || Request::is('services/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('service.create') }}">Add Service</a>
-		</li>
-		</ul>
-		<!-- Services: sub -->
-	</li>
-	<!-- End Services -->
-	
-  
-	<!-- Categories -->
+	<!-- Categories (Only for Super Admins) -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('category*') || Request::is('categories*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="#"
 		data-target="#subCategories">
@@ -201,62 +152,7 @@
 	</li>
 	<!-- End Categories -->
 
-
-	<!-- Ads -->
-	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('ad*') || Request::is('ads*') ? 'active' : '' }}">
-		<a class="side-nav-menu-link media align-items-center" href="#"
-		data-target="#subAds">
-		<span class="side-nav-menu-icon d-flex mr-3">
-			<i class="gd-image"></i>
-		</span>
-		<span class="side-nav-fadeout-on-closed media-body">Ads</span>
-		<span class="side-nav-control-icon d-flex">
-			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
-		</span>
-		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
-		</a>
-
-		<!-- Ads: sub -->
-		<ul id="subAds" class="side-nav-menu side-nav-menu-second-level mb-0">
-		<li class="side-nav-menu-item {{ (Request::is('ad') || Request::is('ads')) && !Request::is('ad/create') && !Request::is('ads/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('ad.index') }}">All Ads</a>
-		</li>
-		<li class="side-nav-menu-item {{ Request::is('ad/create') || Request::is('ads/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('ad.create') }}">Add Ad</a>
-		</li>
-		</ul>
-		<!-- Ads: sub -->
-	</li>
-	<!-- End Ads -->
-
-	<!-- News -->
-	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('news*') ? 'active' : '' }}">
-		<a class="side-nav-menu-link media align-items-center" href="#"
-			data-target="#subNews">
-			<span class="side-nav-menu-icon d-flex mr-3">
-			<i class="gd-file"></i>
-			</span>
-			<span class="side-nav-fadeout-on-closed media-body">News</span>
-			<span class="side-nav-control-icon d-flex">
-			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
-			</span>
-			<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
-		</a>
-
-		<!-- News: sub -->
-		<ul id="subNews" class="side-nav-menu side-nav-menu-second-level mb-0">
-			<li class="side-nav-menu-item {{ Request::is('news') && !Request::is('news/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('news.index') }}">All News</a>
-			</li>
-			<li class="side-nav-menu-item {{ Request::is('news/create') ? 'active' : '' }}">
-			<a class="side-nav-menu-link" href="{{ route('news.create') }}">Add News</a>
-			</li>
-		</ul>
-		<!-- News: sub -->
-	</li>
-	<!-- End News -->
-
-	<!-- Notifications -->
+	<!-- Notifications (Only for Super Admins) -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('notification*') || Request::is('notifications*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="#"
 		data-target="#subNotifications">
@@ -286,7 +182,7 @@
 	</li>
 	<!-- End Notifications -->
 
-	<!-- Title -->
+	<!-- Title - Communications (Only for Super Admins) -->
 	<li class="sidebar-heading h6">Communications</li>
 	<!-- End Title -->
 	
@@ -300,31 +196,185 @@
 		</a>
 	</li>
 	<!-- End Contact Messages -->
+	@else
+	<!-- Title - Content Management (For City-assigned Admins) -->
+	<li class="sidebar-heading h6">Content Management</li>
+	<!-- End Title -->
+	@endif
 
-  	<!-- Settings -->
+	<!-- Services - Available for both Super Admins and City Admins -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('service*') || Request::is('services*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subServices">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-layers"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Services</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Services: sub -->
+		<ul id="subServices" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('service') || Request::is('services')) && !Request::is('service/create') && !Request::is('services/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('service.index') }}">All Services</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('service/create') || Request::is('services/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('service.create') }}">Add Service</a>
+		</li>
+		</ul>
+		<!-- Services: sub -->
+	</li>
+	<!-- End Services -->
+
+	<!-- Ads - Available for both Super Admins and City Admins -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('ad*') || Request::is('ads*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subAds">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-image"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Ads</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Ads: sub -->
+		<ul id="subAds" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('ad') || Request::is('ads')) && !Request::is('ad/create') && !Request::is('ads/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('ad.index') }}">All Ads</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('ad/create') || Request::is('ads/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('ad.create') }}">Add Ad</a>
+		</li>
+		</ul>
+		<!-- Ads: sub -->
+	</li>
+	<!-- End Ads -->
+
+	<!-- Categories - Available for both Super Admins and City Admins -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('category*') || Request::is('categories*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subCategories">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-bookmark"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Categories</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Categories: sub -->
+		<ul id="subCategories" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('category') || Request::is('categories')) && !Request::is('category/create') && !Request::is('categories/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('category.index') }}">All Categories</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('category/create') || Request::is('categories/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('category.create') }}">Add Category</a>
+		</li>
+		</ul>
+		<!-- Categories: sub -->
+	</li>
+	<!-- End Categories -->
+
+	<!-- News - Available for both Super Admins and City Admins -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('news*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+			data-target="#subNews">
+			<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-file"></i>
+			</span>
+			<span class="side-nav-fadeout-on-closed media-body">News</span>
+			<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+			</span>
+			<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- News: sub -->
+		<ul id="subNews" class="side-nav-menu side-nav-menu-second-level mb-0">
+			<li class="side-nav-menu-item {{ Request::is('news') && !Request::is('news/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('news.index') }}">All News</a>
+			</li>
+			<li class="side-nav-menu-item {{ Request::is('news/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('news.create') }}">Add News</a>
+			</li>
+		</ul>
+		<!-- News: sub -->
+	</li>
+	<!-- End News -->
+
+	<!-- Notifications - Available for both Super Admins and City Admins -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('notification*') || Request::is('notifications*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subNotifications">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-bell"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Notifications</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Notifications: sub -->
+		<ul id="subNotifications" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('notification') || Request::is('notifications')) && !Request::is('notification/create') && !Request::is('notifications/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('notification.index') }}">All Notifications</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('notification/create') || Request::is('notifications/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('notification.create') }}">Add Notification</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('notification/send-firebase') || Request::is('notifications/send-firebase') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('notification.send-firebase') }}">Send Firebase Only</a>
+		</li>
+		</ul>
+		<!-- Notifications: sub -->
+	</li>
+	<!-- End Notifications -->
+
+	<!-- Contact Messages - Available for both Super Admins and City Admins -->
+	<li class="side-nav-menu-item {{ Request::is('contact*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="{{ route('contact.index') }}">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-envelope"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Contact Messages</span>
+		</a>
+	</li>
+	<!-- End Contact Messages -->
+
+  	<!-- Settings - Available for both Super Admins and City Admins -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('setting*') || Request::is('settings*') ? 'active' : '' }}">
-<a class="side-nav-menu-link media align-items-center" href="#"
-	data-target="#subSettings">
-	<span class="side-nav-menu-icon d-flex mr-3">
-	<i class="gd-settings"></i>
-	</span>
-	<span class="side-nav-fadeout-on-closed media-body">Settings</span>
-	<span class="side-nav-control-icon d-flex">
-	<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
-	</span>
-	<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
-</a>
+		<a class="side-nav-menu-link media align-items-center" href="#"
+			data-target="#subSettings">
+			<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-settings"></i>
+			</span>
+			<span class="side-nav-fadeout-on-closed media-body">Settings</span>
+			<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+			</span>
+			<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
 
-<!-- Settings: sub -->
-<ul id="subSettings" class="side-nav-menu side-nav-menu-second-level mb-0">
-	<li class="side-nav-menu-item {{ (Request::is('setting') || Request::is('settings')) && !Request::is('setting/create') && !Request::is('settings/create') ? 'active' : '' }}">
-	<a class="side-nav-menu-link" href="{{ route('setting.index') }}">All Settings</a>
-	</li>
-	<li class="side-nav-menu-item {{ Request::is('setting/create') || Request::is('settings/create') ? 'active' : '' }}">
-	<a class="side-nav-menu-link" href="{{ route('setting.create') }}">Add Setting</a>
-	</li>
-</ul>
-<!-- Settings: sub -->
+		<!-- Settings: sub -->
+		<ul id="subSettings" class="side-nav-menu side-nav-menu-second-level mb-0">
+			<li class="side-nav-menu-item {{ (Request::is('setting') || Request::is('settings')) && !Request::is('setting/create') && !Request::is('settings/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('setting.index') }}">All Settings</a>
+			</li>
+			<li class="side-nav-menu-item {{ Request::is('setting/create') || Request::is('settings/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('setting.create') }}">Add Setting</a>
+			</li>
+		</ul>
+		<!-- Settings: sub -->
 	</li>
 	<!-- End Settings -->
 

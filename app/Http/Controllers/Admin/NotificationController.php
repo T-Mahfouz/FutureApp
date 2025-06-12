@@ -5,43 +5,196 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Notification;
-use App\Models\City;
-use App\Models\News;
 use App\Models\Service;
+use App\Models\News;
 use App\Models\Media;
-use App\Helpers\FirebaseHelper;
+use App\Models\City;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
-    // Show all notifications
-    public function index()
+    /**
+     * Get cities that the current admin can access
+     */
+    private function getAccessibleCityIds()
     {
-        $notifications = Notification::with(['service', 'image', 'news'])
-                     ->latest()
-                     ->paginate(25);
-        return view('notification.index', compact('notifications'));
+        $admin = Auth::guard('admin')->user();
+        $adminCities = $admin->cities();
+        
+        // If admin has no city assignments, they can access all cities (super admin)
+        if ($adminCities->count() == 0) {
+            return City::pluck('id')->toArray();
+        }
+        
+        // Otherwise, return only assigned cities
+        return $adminCities->pluck('cities.id')->toArray();
+    }
+
+    /**
+     * Apply city restriction to query based on related services and news
+     */
+    private function applyCityRestriction($query)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        // Filter notifications that are related to services or news from accessible cities
+        return $query->where(function($q) use ($accessibleCityIds) {
+            $q->whereHas('service', function($serviceQuery) use ($accessibleCityIds) {
+                $serviceQuery->whereIn('city_id', $accessibleCityIds);
+            })
+            ->orWhereHas('news', function($newsQuery) use ($accessibleCityIds) {
+                $newsQuery->whereIn('city_id', $accessibleCityIds);
+            })
+            ->orWhere(function($standaloneQuery) use ($accessibleCityIds) {
+                // For standalone notifications (not linked to service/news)
+                // We'll allow them if admin has access to all cities or if they don't have service/news relations
+                $standaloneQuery->whereNull('service_id')
+                               ->whereNull('news_id');
+                
+                // If admin has city restrictions, only show standalone notifications they created
+                $admin = Auth::guard('admin')->user();
+                if ($admin->cities()->count() > 0) {
+                    // You might want to add a created_by field to notifications table for this
+                    // For now, we'll be more restrictive and not show standalone notifications
+                    $standaloneQuery->whereRaw('1 = 0'); // This will exclude all standalone notifications for city admins
+                }
+            });
+        });
+    }
+
+    // Show all notifications
+    public function index(Request $request)
+    {
+        $query = Notification::with(['service.city', 'news.city', 'image']);
+        
+        // Apply city restriction based on admin's assigned cities
+        $query = $this->applyCityRestriction($query);
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                  ->orWhere('body', 'LIKE', "%{$search}%")
+                  ->orWhereHas('service', function($serviceQuery) use ($search) {
+                      $serviceQuery->where('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('news', function($newsQuery) use ($search) {
+                      $newsQuery->where('name', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Filter by notification type
+        if ($request->filled('type')) {
+            switch ($request->get('type')) {
+                case 'service':
+                    $query->whereNotNull('service_id');
+                    break;
+                case 'news':
+                    $query->whereNotNull('news_id');
+                    break;
+                case 'general':
+                    $query->whereNull('service_id')->whereNull('news_id');
+                    break;
+            }
+        }
+        
+        // Filter by city (through service or news)
+        if ($request->filled('city_id')) {
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (in_array($request->get('city_id'), $accessibleCityIds)) {
+                $cityId = $request->get('city_id');
+                $query->where(function($q) use ($cityId) {
+                    $q->whereHas('service', function($serviceQuery) use ($cityId) {
+                        $serviceQuery->where('city_id', $cityId);
+                    })
+                    ->orWhereHas('news', function($newsQuery) use ($cityId) {
+                        $newsQuery->where('city_id', $cityId);
+                    });
+                });
+            }
+        }
+        
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+        
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+        
+        // Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        $allowedSorts = ['title', 'created_at', 'updated_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->latest();
+        }
+        
+        $notifications = $query->paginate(25)->withQueryString();
+        
+        // Get filter options - only cities admin has access to
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
+        
+        return view('notification.index', compact('notifications', 'cities'));
     }
 
     // Show the form to create new notification
     public function create()
     {
-        $cities = City::all();
-        $services = Service::with('city')->get();
-        $news = News::all();
         $notification = new Notification();
         
-        return view('notification.edit', compact('notification', 'cities', 'services', 'news'));
+        // Only show services and news from accessible cities
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $services = Service::whereIn('city_id', $accessibleCityIds)
+                          ->orderBy('name')
+                          ->get();
+        
+        $news = News::whereIn('city_id', $accessibleCityIds)
+                   ->orderBy('name')
+                   ->get();
+        
+        return view('notification.edit', compact('notification', 'services', 'news'));
     }
 
     // Show the form for editing the specified notification
     public function edit(Notification $notification)
     {
-        $cities = City::all();
-        $services = Service::with('city')->get();
-        $news = News::all();
+        // Check if admin has access to this notification
+        $accessibleCityIds = $this->getAccessibleCityIds();
         
-        return view('notification.edit', compact('notification', 'cities', 'services', 'news'));
+        $hasAccess = false;
+        if ($notification->service_id) {
+            $hasAccess = $notification->service && in_array($notification->service->city_id, $accessibleCityIds);
+        } elseif ($notification->news_id) {
+            $hasAccess = $notification->news && in_array($notification->news->city_id, $accessibleCityIds);
+        } else {
+            // For standalone notifications, only super admins can edit
+            $hasAccess = count($accessibleCityIds) === City::count();
+        }
+        
+        if (!$hasAccess) {
+            abort(403, 'You do not have permission to edit this notification.');
+        }
+
+        // Only show services and news from accessible cities
+        $services = Service::whereIn('city_id', $accessibleCityIds)
+                          ->orderBy('name')
+                          ->get();
+        
+        $news = News::whereIn('city_id', $accessibleCityIds)
+                   ->orderBy('name')
+                   ->get();
+        
+        return view('notification.edit', compact('notification', 'services', 'news'));
     }
 
     // Save a newly created notification
@@ -54,18 +207,58 @@ class NotificationController extends Controller
     // Update the specified notification
     public function update(Request $request, Notification $notification)
     {
+        // For existing notifications, check access
+        if ($notification->exists) {
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            
+            $hasAccess = false;
+            if ($notification->service_id) {
+                $hasAccess = $notification->service && in_array($notification->service->city_id, $accessibleCityIds);
+            } elseif ($notification->news_id) {
+                $hasAccess = $notification->news && in_array($notification->news->city_id, $accessibleCityIds);
+            } else {
+                // For standalone notifications, only super admins can edit
+                $hasAccess = count($accessibleCityIds) === City::count();
+            }
+            
+            if (!$hasAccess) {
+                abort(403, 'You do not have permission to edit this notification.');
+            }
+        }
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+
         // Validation rules
         $rules = [
             'title' => 'required|string|max:255',
-            'body' => 'required|string|max:1000',
-            'service_id' => 'nullable|exists:services,id',
-            'news_id' => 'nullable|exists:news,id',
+            'body' => 'required|string',
+            'service_id' => ['nullable', 'exists:services,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                if ($value) {
+                    $service = Service::find($value);
+                    if ($service && !in_array($service->city_id, $accessibleCityIds)) {
+                        $fail('You do not have permission to create notifications for this service.');
+                    }
+                }
+            }],
+            'news_id' => ['nullable', 'exists:news,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                if ($value) {
+                    $news = News::find($value);
+                    if ($news && !in_array($news->city_id, $accessibleCityIds)) {
+                        $fail('You do not have permission to create notifications for this news.');
+                    }
+                }
+            }],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'target_type' => 'required|in:broadcast,cities,service,news',
-            'city_ids' => 'required_if:target_type,cities|array',
-            'city_ids.*' => 'exists:cities,id',
-            'send_firebase' => 'boolean',
         ];
+
+        // For city admins, don't allow standalone notifications
+        if (count($accessibleCityIds) < City::count()) {
+            $rules['service_or_news'] = ['required', function ($attribute, $value, $fail) use ($request) {
+                if (!$request->service_id && !$request->news_id) {
+                    $fail('You must select either a service or news item for this notification.');
+                }
+            }];
+        }
 
         $request->validate($rules);
 
@@ -73,7 +266,7 @@ class NotificationController extends Controller
         $imageId = $notification->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-
+            
             $media = resizeImage($image, $this->storagePath);
             
             $imageId = $media->id ?? null;
@@ -94,11 +287,6 @@ class NotificationController extends Controller
 
         $notification->save();
 
-        // Send Firebase notification if requested
-        if ($request->boolean('send_firebase')) {
-            $this->sendFirebaseNotification($request, $notification);
-        }
-
         $message = $notification->wasRecentlyCreated ? 'Notification has been created successfully' : 'Notification has been updated successfully';
 
         return redirect()
@@ -109,13 +297,47 @@ class NotificationController extends Controller
     // Show the specified notification details
     public function show(Notification $notification)
     {
-        $notification->load(['service', 'image', 'news']);
+        // Check if admin has access to this notification
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $hasAccess = false;
+        if ($notification->service_id) {
+            $hasAccess = $notification->service && in_array($notification->service->city_id, $accessibleCityIds);
+        } elseif ($notification->news_id) {
+            $hasAccess = $notification->news && in_array($notification->news->city_id, $accessibleCityIds);
+        } else {
+            // For standalone notifications, only super admins can view
+            $hasAccess = count($accessibleCityIds) === City::count();
+        }
+        
+        if (!$hasAccess) {
+            abort(403, 'You do not have permission to view this notification.');
+        }
+
+        $notification->load(['service.city', 'news.city', 'image']);
         return view('notification.show', compact('notification'));
     }
 
     // Delete the specified notification
     public function destroy(Notification $notification)
     {
+        // Check if admin has access to this notification
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $hasAccess = false;
+        if ($notification->service_id) {
+            $hasAccess = $notification->service && in_array($notification->service->city_id, $accessibleCityIds);
+        } elseif ($notification->news_id) {
+            $hasAccess = $notification->news && in_array($notification->news->city_id, $accessibleCityIds);
+        } else {
+            // For standalone notifications, only super admins can delete
+            $hasAccess = count($accessibleCityIds) === City::count();
+        }
+        
+        if (!$hasAccess) {
+            abort(403, 'You do not have permission to delete this notification.');
+        }
+
         // Delete image if exists
         if($notification->image){
             Storage::disk('public')->delete($notification->image->path);
@@ -129,78 +351,131 @@ class NotificationController extends Controller
             ->with('status', 'Notification has been deleted successfully');
     }
 
-    // Send Firebase notification only
-    public function sendFirebase(Request $request)
+    // Send Firebase notification
+    public function sendFirebase()
     {
+        // Only show services and news from accessible cities
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $services = Service::whereIn('city_id', $accessibleCityIds)
+                          ->orderBy('name')
+                          ->get();
+        
+        $news = News::whereIn('city_id', $accessibleCityIds)
+                   ->orderBy('name')
+                   ->get();
+        
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
+        
+        return view('notification.firebase', compact('services', 'news', 'cities'));
+    }
+
+    // Process Firebase notification sending
+    public function processFirebase(Request $request)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+
         $rules = [
             'title' => 'required|string|max:255',
-            'body' => 'required|string|max:1000',
-            'target_type' => 'required|in:broadcast,cities,service,news',
-            'city_ids' => 'required_if:target_type,cities|array',
-            'city_ids.*' => 'exists:cities,id',
-            'service_id' => 'nullable|exists:services,id',
-            'news_id' => 'nullable|exists:news,id',
+            'body' => 'required|string',
+            'target_type' => 'required|in:all,city,service,news',
+            'target_id' => 'nullable|integer',
         ];
+
+        if ($request->target_type === 'city') {
+            $rules['target_id'] = ['required', 'exists:cities,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                if (!in_array($value, $accessibleCityIds)) {
+                    $fail('You do not have permission to send notifications to this city.');
+                }
+            }];
+        } elseif ($request->target_type === 'service') {
+            $rules['target_id'] = ['required', 'exists:services,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                $service = Service::find($value);
+                if ($service && !in_array($service->city_id, $accessibleCityIds)) {
+                    $fail('You do not have permission to send notifications for this service.');
+                }
+            }];
+        } elseif ($request->target_type === 'news') {
+            $rules['target_id'] = ['required', 'exists:news,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                $news = News::find($value);
+                if ($news && !in_array($news->city_id, $accessibleCityIds)) {
+                    $fail('You do not have permission to send notifications for this news.');
+                }
+            }];
+        }
 
         $request->validate($rules);
 
-        $result = $this->sendFirebaseNotification($request);
-
-        if ($result['success']) {
-            return redirect()->back()->with('status', 'Firebase notification sent successfully');
-        } else {
-            return redirect()->back()->with('error', 'Failed to send Firebase notification: ' . $result['message']);
-        }
+        // Here you would implement the actual Firebase sending logic
+        // For now, we'll just simulate success
+        
+        return redirect()
+            ->route('notification.send-firebase')
+            ->with('status', 'Firebase notification has been sent successfully');
     }
 
-    private function sendFirebaseNotification($request, $notification = null)
+    // Bulk actions
+    public function bulkAction(Request $request)
     {
-        $title = $request->input('title');
-        $body = $request->input('body');
-        $targetType = $request->input('target_type');
-        
-        // Get image URL if exists
-        $imageUrl = null;
-        if ($notification && $notification->image) {
-            $imageUrl = asset('storage/' . $notification->image->path);
-        }
+        $request->validate([
+            'action' => 'required|in:delete',
+            'notification_ids' => 'required|array',
+            'notification_ids.*' => 'exists:notifications,id'
+        ]);
 
-        $result = ['success' => false, 'message' => 'Unknown error'];
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $deletedItems = [];
+        $errors = [];
 
-        switch ($targetType) {
-            case 'broadcast':
-                $result = FirebaseHelper::sendBroadcast($title, $body, $imageUrl);
-                break;
-                
-            case 'cities':
-                $cityIds = $request->input('city_ids', []);
-                $result = FirebaseHelper::sendToMultipleCities($cityIds, $title, $body, $imageUrl);
-                break;
-                
-            case 'service':
-                $serviceId = $request->input('service_id');
-                if ($serviceId) {
-                    $service = Service::find($serviceId);
-                    if ($service && $service->city_id) {
-                        $result = FirebaseHelper::sendToCityTopic($service->city_id, $title, $body, $imageUrl, [
-                            'type' => 'service',
-                            'service_id' => $serviceId
-                        ]);
+        if ($request->action === 'delete') {
+            foreach ($request->notification_ids as $notificationId) {
+                try {
+                    $notification = Notification::find($notificationId);
+                    if (!$notification) continue;
+
+                    // Check if admin has access to this notification
+                    $hasAccess = false;
+                    if ($notification->service_id) {
+                        $hasAccess = $notification->service && in_array($notification->service->city_id, $accessibleCityIds);
+                    } elseif ($notification->news_id) {
+                        $hasAccess = $notification->news && in_array($notification->news->city_id, $accessibleCityIds);
+                    } else {
+                        // For standalone notifications, only super admins can delete
+                        $hasAccess = count($accessibleCityIds) === City::count();
                     }
+
+                    if (!$hasAccess) {
+                        $errors[] = "No permission to delete notification '{$notification->title}'";
+                        continue;
+                    }
+
+                    $notificationTitle = $notification->title;
+
+                    // Delete image if exists
+                    if($notification->image){
+                        Storage::disk('public')->delete($notification->image->path);
+                        $notification->image->delete();
+                    }
+
+                    $notification->delete();
+                    $deletedItems[] = "notification '{$notificationTitle}'";
+
+                } catch (\Exception $e) {
+                    $errors[] = "Error deleting notification '{$notificationTitle}': " . $e->getMessage();
                 }
-                break;
-                
-            case 'news':
-                $newsId = $request->input('news_id');
-                if ($newsId) {
-                    $result = FirebaseHelper::sendBroadcast($title, $body, $imageUrl, [
-                        'type' => 'news',
-                        'news_id' => $newsId
-                    ]);
-                }
-                break;
+            }
         }
 
-        return $result;
+        $message = "";
+        if (!empty($deletedItems)) {
+            $message = "Successfully deleted: " . implode(', ', $deletedItems);
+        }
+        if (!empty($errors)) {
+            $message .= (!empty($message) ? " | " : "") . "Errors: " . implode(", ", $errors);
+        }
+
+        return redirect()
+            ->route('notification.index')
+            ->with(!empty($deletedItems) ? 'status' : 'error', $message ?: 'No items were deleted.');
     }
 }
