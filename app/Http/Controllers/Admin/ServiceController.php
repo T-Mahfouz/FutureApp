@@ -12,43 +12,83 @@ use Illuminate\Support\Facades\Storage;
 
 class ServiceController extends Controller
 {
+
     public function index(Request $request)
     {
         $query = Service::with(['city', 'image', 'categories', 'phones'])
                        ->withCount(['rates', 'favorites', 'images']);
 
+        // Search by name, description, or phone
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%')
+                  ->orWhere('brief_description', 'like', '%' . $search . '%')
+                  ->orWhereHas('phones', function($phoneQuery) use ($search) {
+                      $phoneQuery->where('phone', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
         // Filter by city
-        if ($request->has('city_id') && $request->city_id) {
+        if ($request->filled('city_id')) {
             $query->where('city_id', $request->city_id);
         }
 
         // Filter by category
-        if ($request->has('category_id') && $request->category_id) {
+        if ($request->filled('category_id')) {
             $query->whereHas('categories', function($q) use ($request) {
                 $q->where('categories.id', $request->category_id);
             });
         }
 
         // Filter by status
-        if ($request->has('valid') && $request->valid !== '') {
+        if ($request->filled('valid')) {
             $query->where('valid', $request->valid);
         }
 
-        // Search
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('phones', function($phoneQuery) use ($search) {
-                      $phoneQuery->where('phone', 'like', "%{$search}%");
-                  });
-            });
+        // Filter by service type
+        if ($request->filled('service_type')) {
+            switch ($request->service_type) {
+                case 'main':
+                    $query->whereNull('parent_id');
+                    break;
+                case 'sub':
+                    $query->whereNotNull('parent_id');
+                    break;
+                case 'ad':
+                    $query->where('is_add', true);
+                    break;
+            }
         }
 
-        $services = $query->latest()->paginate(25);
-        $cities = City::all();
-        $categories = Category::all();
+        // Filter by creation date
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        
+        $allowedSorts = ['name', 'created_at', 'arrangement_order', 'rates_count', 'favorites_count'];
+        if (in_array($sortBy, $allowedSorts)) {
+            if (in_array($sortBy, ['rates_count', 'favorites_count'])) {
+                $query->orderBy($sortBy, $sortDirection);
+            } else {
+                $query->orderBy($sortBy, $sortDirection);
+            }
+        }
+
+        $services = $query->paginate(25)->appends($request->query());
+        
+        // Get filter options
+        $cities = City::orderBy('name')->get();
+        $categories = Category::orderBy('created_at')->get();
 
         return view('service.index', compact('services', 'cities', 'categories'));
     }
@@ -258,5 +298,87 @@ class ServiceController extends Controller
             'message' => "Service has been {$status} successfully",
             'status' => $service->valid
         ]);
+    }
+
+    // Bulk operations for future use
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'service_ids' => 'required|array',
+            'service_ids.*' => 'exists:services,id'
+        ]);
+
+        $deletedItems = [];
+        $errors = [];
+
+        foreach ($request->service_ids as $serviceId) {
+            try {
+                $service = Service::find($serviceId);
+                if (!$service) continue;
+
+                $serviceName = $service->name;
+
+                // Check if service has sub-services
+                if($service->subServices()->count() > 0){
+                    $errors[] = "Cannot delete service '{$serviceName}': has sub-services";
+                    continue;
+                }
+
+                // Delete main image if exists
+                if($service->image){
+                    Storage::disk('public')->delete($service->image->path);
+                    $service->image->delete();
+                }
+
+                // Delete additional images
+                foreach($service->images as $image){
+                    Storage::disk('public')->delete($image->path);
+                    $image->delete();
+                }
+
+                // Delete related records
+                $service->phones()->delete();
+                $service->categories()->detach();
+                $service->images()->detach();
+                $service->favorites()->delete();
+                $service->rates()->delete();
+
+                $service->delete();
+                $deletedItems[] = "service '{$serviceName}'";
+
+            } catch (\Exception $e) {
+                $errors[] = "Error deleting service '{$serviceName}': " . $e->getMessage();
+            }
+        }
+
+        $message = "";
+        if (!empty($deletedItems)) {
+            $message = "Successfully deleted: " . implode(', ', $deletedItems);
+        }
+        if (!empty($errors)) {
+            $message .= (!empty($message) ? " | " : "") . "Errors: " . implode(", ", $errors);
+        }
+
+        return redirect()
+            ->route('service.index')
+            ->with(!empty($deletedItems) ? 'status' : 'error', $message ?: 'No items were deleted.');
+    }
+
+    public function bulkToggleStatus(Request $request)
+    {
+        $request->validate([
+            'service_ids' => 'required|array',
+            'service_ids.*' => 'exists:services,id',
+            'status' => 'required|boolean'
+        ]);
+
+        $updatedCount = Service::whereIn('id', $request->service_ids)
+                              ->update(['valid' => $request->status]);
+
+        $status = $request->status ? 'activated' : 'deactivated';
+        
+        return redirect()
+            ->route('service.index')
+            ->with('status', "{$updatedCount} services have been {$status} successfully");
     }
 }

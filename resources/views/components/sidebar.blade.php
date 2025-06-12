@@ -120,6 +120,32 @@
 	</li>
 	<!-- End Cities -->
 
+	{{-- <!-- Services -->
+	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('service*') || Request::is('services*') ? 'active' : '' }}">
+		<a class="side-nav-menu-link media align-items-center" href="#"
+		data-target="#subServices">
+		<span class="side-nav-menu-icon d-flex mr-3">
+			<i class="gd-layers"></i>
+		</span>
+		<span class="side-nav-fadeout-on-closed media-body">Services</span>
+		<span class="side-nav-control-icon d-flex">
+			<i class="gd-angle-right side-nav-fadeout-on-closed"></i>
+		</span>
+		<span class="side-nav__indicator side-nav-fadeout-on-closed"></span>
+		</a>
+
+		<!-- Services: sub -->
+		<ul id="subServices" class="side-nav-menu side-nav-menu-second-level mb-0">
+		<li class="side-nav-menu-item {{ (Request::is('service') || Request::is('services')) && !Request::is('service/create') && !Request::is('services/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('service.index') }}">All Services</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('service/create') || Request::is('services/create') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('service.create') }}">Add Service</a>
+		</li>
+		</ul>
+		<!-- Services: sub -->
+	</li>
+	<!-- End Services --> --}}
 	<!-- Services -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('service*') || Request::is('services*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="#"
@@ -146,7 +172,6 @@
 		<!-- Services: sub -->
 	</li>
 	<!-- End Services -->
-	
 	
   
 	<!-- Categories -->
