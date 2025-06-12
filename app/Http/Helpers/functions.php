@@ -114,7 +114,7 @@ if (!function_exists('resizeImage')) {
 
             // Generate filename
             $ext = strtolower($file->getClientOriginalExtension());
-            $baseName = $file->getClientOriginalName();
+            $baseName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $timestamp = time();
             $randomString = Str::random(8);
             $finalFilename = "{$baseName}-{$newWidth}x{$newHeight}-{$timestamp}-{$randomString}.{$ext}";
