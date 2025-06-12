@@ -181,25 +181,45 @@ class AdController extends Controller
     }
 
     // Delete the specified ad
-    public function destroy(Ad $ad)
+    public function destroy($id)
     {
-        // Check if admin has access to this ad's city
-        $accessibleCityIds = $this->getAccessibleCityIds();
-        if (!in_array($ad->city_id, $accessibleCityIds)) {
-            abort(403, 'You do not have permission to delete this ad.');
-        }
+        \DB::beginTransaction();
+        try {
+            $ad = Ad::find($id);
+            if (!$ad) {
+                return response()->json([
+                    'message' => 'Ad not found'
+                ], 404);
+            }
 
-        // Delete image if exists
-        if($ad->image){
-            Storage::disk('public')->delete($ad->image->path);
-            $ad->image->delete();
-        }
+            // Check if admin has access to this ad's city
+            $accessibleCityIds = $this->getAccessibleCityIds();
 
-        $ad->delete();
-        
-        return redirect()
-            ->route('ad.index')
-            ->with('status', 'Ad has been deleted successfully');
+            if (!in_array($ad->city_id, $accessibleCityIds)) {
+                return response()->json([
+                        'message' => 'You do not have permission to delete this ad.'
+                    ], 403);
+                // abort(403, 'You do not have permission to delete this ad.');
+            }
+            
+            if($ad->image){
+                Storage::disk('public')->delete($ad->image->path);
+                $ad->image->delete();
+            }
+
+            $ad->delete();
+
+            \DB::commit();
+
+        } catch (\Exception $ex) {
+            \DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete ad: ' . $ex->getMessage()
+            ], 500);
+        }
+        return response()->json([
+            'message' => 'Ad has been deleted successfully'
+        ]);
     }
 
     // Bulk actions

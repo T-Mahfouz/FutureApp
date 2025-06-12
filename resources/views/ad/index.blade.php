@@ -6,6 +6,8 @@
 
 @include('components.notification')
 
+<div id="feedback-container"></div>
+
 <div class="card mb-3 mb-md-4">
 	<div class="card-body">
 		<!-- Breadcrumb -->
@@ -91,7 +93,7 @@
 					</thead>
 					<tbody>
 					@forelse($ads as $ad)
-					<tr>
+					<tr id="ad-row-{{ $ad->id }}">
 						<td class="py-3">
 							<input type="checkbox" name="ad_ids[]" value="{{ $ad->id }}" class="ad-checkbox">
 						</td>
@@ -136,13 +138,9 @@
 								<a class="link-dark d-inline-block" href="{{ route('ad.edit', $ad) }}" title="Edit">
 									<i class="gd-pencil icon-text"></i>
 								</a>
-								<a class="link-dark d-inline-block" href="#" onclick="if(confirm('Delete this ad? This action cannot be undone.')){document.getElementById('delete-entity-{{ $ad->id }}').submit();return false;}" title="Delete">
+								<a class="link-dark d-inline-block" href="#" onclick="destroy(event, {{$ad->id}})" title="Delete">
 									<i class="gd-trash icon-text"></i>
 								</a>
-								<form id="delete-entity-{{ $ad->id }}" action="{{ route('ad.destroy', $ad) }}" method="POST" style="display: none;">
-									<input type="hidden" name="_method" value="DELETE">
-									@csrf
-								</form>
 							</div>
 						</td>
 					</tr>
@@ -206,6 +204,73 @@ function confirmBulkAction() {
     const actionText = action.replace('_', ' ');
     return confirm(`Are you sure you want to ${actionText} ${checkedBoxes.length} ad(s)?`);
 }
+
+
+
+const alertContainer = document.getElementById('feedback-container');
+    
+// Remove existing alerts
+alertContainer.innerHTML = '';
+
+function destroy(event, id) {
+	
+    event.preventDefault();
+    
+	if(!confirm('Delete this ad? This action cannot be undone.')) {
+		return;
+	}
+    let devID = `ad-row-${id}`;
+
+    const url = `{{ route('ad.destroy', ['id' => ':id']) }}`.replace(':id', id);
+    const csrf = $('meta[name="csrf-token"]').attr('content');
+
+    let alertClass = '';
+    let iconClass = '';
+    let title = '';
+    let message = '';
+
+    
+
+    $.ajax({
+        method: "DELETE",
+        url: url,
+        headers: {
+            'X-CSRF-TOKEN': csrf
+        }
+    })
+    .done(function( data ) {
+
+        alertClass = 'alert-success';
+        iconClass = 'gd-info-circle';
+        title = 'Success!';
+
+        message = data.message
+        
+        $("#"+devID).remove();
+        
+    }).fail(function( err ) {
+        alertClass = 'alert-danger';
+        iconClass = 'gd-alert';
+        title = 'Error!';
+        message = err;
+
+    }).always(function() {
+        let alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="${iconClass} mr-2"></i>
+                <strong>${title}</strong> ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+        alertContainer.innerHTML = alertHtml;
+        
+        window.scrollTo(0, 0);
+
+    });
+}
+
 </script>
 
 @endsection

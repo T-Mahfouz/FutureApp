@@ -109,7 +109,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/ads/{ad}', [AdController::class, 'show'])->name('ad.show');
     Route::get('/ads/{ad}/edit', [AdController::class, 'edit'])->name('ad.edit');
     Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
-    Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->name('ad.destroy');
+    Route::delete('/ads/{id}', [AdController::class, 'destroy'])->name('ad.destroy');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');
