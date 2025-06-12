@@ -77,6 +77,9 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
 
+    Route::post('/services/bulk-destroy', [ServiceController::class, 'bulkDestroy'])->name('service.bulk-destroy');
+    Route::post('/services/bulk-toggle-status', [ServiceController::class, 'bulkToggleStatus'])->name('service.bulk-toggle-status');
+    
     // News
     Route::get('/news', [NewsController::class, 'index'])->name('news.index');
     Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
@@ -106,7 +109,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/ads/{ad}', [AdController::class, 'show'])->name('ad.show');
     Route::get('/ads/{ad}/edit', [AdController::class, 'edit'])->name('ad.edit');
     Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
-    Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->name('ad.destroy');
+    Route::delete('/ads/{id}', [AdController::class, 'destroy'])->name('ad.destroy');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');

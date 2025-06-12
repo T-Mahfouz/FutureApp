@@ -32,6 +32,16 @@ class City extends Model
     {
         return $this->hasMany(Service::class);
     }
+    
+    public function news()
+    {
+        return $this->hasMany(News::class);
+    }
+    
+    public function contactMessages()
+    {
+        return $this->hasMany(ContactUs::class);
+    }
 
     public function ads()
     {

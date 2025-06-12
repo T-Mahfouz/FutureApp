@@ -7,14 +7,45 @@ use App\Models\NewsImage;
 use Illuminate\Http\Request;
 use App\Models\News;
 use App\Models\Media;
+use App\Models\City;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class NewsController extends Controller
 {
+    /**
+     * Get cities that the current admin can access
+     */
+    private function getAccessibleCityIds()
+    {
+        $admin = Auth::guard('admin')->user();
+        $adminCities = $admin->cities();
+        
+        // If admin has no city assignments, they can access all cities (super admin)
+        if ($adminCities->count() == 0) {
+            return City::pluck('id')->toArray();
+        }
+        
+        // Otherwise, return only assigned cities
+        return $adminCities->pluck('cities.id')->toArray();
+    }
+
+    /**
+     * Apply city restriction to query
+     */
+    private function applyCityRestriction($query)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        return $query->whereIn('city_id', $accessibleCityIds);
+    }
+
     // Show all news
     public function index(Request $request)
     {
         $query = News::with(['image', 'city']);
+        
+        // Apply city restriction based on admin's assigned cities
+        $query = $this->applyCityRestriction($query);
         
         // Search functionality
         if ($request->filled('search')) {
@@ -28,9 +59,12 @@ class NewsController extends Controller
             });
         }
         
-        // City filter
+        // City filter (only show cities admin has access to)
         if ($request->filled('city_id')) {
-            $query->where('city_id', $request->get('city_id'));
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (in_array($request->get('city_id'), $accessibleCityIds)) {
+                $query->where('city_id', $request->get('city_id'));
+            }
         }
         
         // Date range filter
@@ -64,8 +98,9 @@ class NewsController extends Controller
         
         $news = $query->paginate(25)->withQueryString();
         
-        // Get all cities for filter dropdown
-        $cities = \App\Models\City::orderBy('name')->get();
+        // Get only cities admin has access to for filter dropdown
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
         
         return view('news.index', compact('news', 'cities'));
     }
@@ -74,14 +109,26 @@ class NewsController extends Controller
     public function create()
     {
         $news = new News();
-        $cities = \App\Models\City::all();
+        
+        // Only show cities admin has access to
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        
         return view('news.edit', compact('news', 'cities'));
     }
 
     // Show the form for editing the specified news
     public function edit(News $news)
     {
-        $cities = \App\Models\City::all();
+        // Check if admin has access to this news's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($news->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to edit this news.');
+        }
+
+        // Only show cities admin has access to
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        
         return view('news.edit', compact('news', 'cities'));
     }
 
@@ -95,11 +142,25 @@ class NewsController extends Controller
     // Update the specified news
     public function update(Request $request, News $news)
     {
+        // For existing news, check if admin has access to this news's city
+        if ($news->exists) {
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (!in_array($news->city_id, $accessibleCityIds)) {
+                abort(403, 'You do not have permission to edit this news.');
+            }
+        }
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'city_id' => 'required|exists:cities,id',
+            'city_id' => ['required', 'exists:cities,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
+                if (!in_array($value, $accessibleCityIds)) {
+                    $fail('You do not have permission to create/edit news in this city.');
+                }
+            }],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'additional_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
@@ -156,6 +217,12 @@ class NewsController extends Controller
     // Show the specified news details
     public function show(News $news)
     {
+        // Check if admin has access to this news's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($news->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to view this news.');
+        }
+
         $news->load(['image', 'city', 'images', 'notifications']);
         return view('news.show', compact('news'));
     }
@@ -163,6 +230,12 @@ class NewsController extends Controller
     // Delete the specified news
     public function destroy(News $news)
     {
+        // Check if admin has access to this news's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($news->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to delete this news.');
+        }
+
         // Check if news has related notifications
         $hasNotifications = $news->notifications()->count() > 0;
 
@@ -204,6 +277,17 @@ class NewsController extends Controller
                 ], 404);
             }
             
+            // Get the news to check city access
+            $news = $image->news;
+            if ($news) {
+                $accessibleCityIds = $this->getAccessibleCityIds();
+                if (!in_array($news->city_id, $accessibleCityIds)) {
+                    return response()->json([
+                        'message' => 'You do not have permission to delete this image.'
+                    ], 403);
+                }
+            }
+            
             $media = Media::find($image->image_id);
 
             if ($media) {
@@ -224,5 +308,74 @@ class NewsController extends Controller
                 'message' => 'Failed to delete image: ' . $ex->getMessage()
             ], 500);
         }
+    }
+
+    // Bulk actions method
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:delete',
+            'news_ids' => 'required|array',
+            'news_ids.*' => 'exists:news,id'
+        ]);
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $deletedItems = [];
+        $errors = [];
+
+        if ($request->action === 'delete') {
+            foreach ($request->news_ids as $newsId) {
+                try {
+                    $news = News::find($newsId);
+                    if (!$news) continue;
+
+                    // Check if admin has access to this news's city
+                    if (!in_array($news->city_id, $accessibleCityIds)) {
+                        $errors[] = "No permission to delete news '{$news->name}'";
+                        continue;
+                    }
+
+                    $newsName = $news->name;
+
+                    // Check if news has related notifications
+                    if($news->notifications()->count() > 0){
+                        $errors[] = "Cannot delete news '{$newsName}': has related notifications";
+                        continue;
+                    }
+
+                    // Delete main image if exists
+                    if($news->image){
+                        Storage::disk('public')->delete($news->image->path);
+                        $news->image->delete();
+                    }
+
+                    // Delete additional images if exist
+                    if($news->images->count() > 0){
+                        foreach($news->images as $image){
+                            Storage::disk('public')->delete($image->path);
+                            $image->delete();
+                        }
+                    }
+
+                    $news->delete();
+                    $deletedItems[] = "news '{$newsName}'";
+
+                } catch (\Exception $e) {
+                    $errors[] = "Error deleting news '{$newsName}': " . $e->getMessage();
+                }
+            }
+        }
+
+        $message = "";
+        if (!empty($deletedItems)) {
+            $message = "Successfully deleted: " . implode(', ', $deletedItems);
+        }
+        if (!empty($errors)) {
+            $message .= (!empty($message) ? " | " : "") . "Errors: " . implode(", ", $errors);
+        }
+
+        return redirect()
+            ->route('news.index')
+            ->with(!empty($deletedItems) ? 'status' : 'error', $message ?: 'No items were deleted.');
     }
 }

@@ -6,17 +6,50 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ContactUs;
 use App\Models\City;
+use Illuminate\Support\Facades\Auth;
 
 class ContactUsController extends Controller
 {
+    /**
+     * Get cities that the current admin can access
+     */
+    private function getAccessibleCityIds()
+    {
+        $admin = Auth::guard('admin')->user();
+        $adminCities = $admin->cities();
+        
+        // If admin has no city assignments, they can access all cities (super admin)
+        if ($adminCities->count() == 0) {
+            return City::pluck('id')->toArray();
+        }
+        
+        // Otherwise, return only assigned cities
+        return $adminCities->pluck('cities.id')->toArray();
+    }
+
+    /**
+     * Apply city restriction to query
+     */
+    private function applyCityRestriction($query)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        return $query->whereIn('city_id', $accessibleCityIds);
+    }
+
     // Show all contact messages
     public function index(Request $request)
     {
         $query = ContactUs::with(['city', 'user']);
         
-        // Filter by city if provided
+        // Apply city restriction based on admin's assigned cities
+        $query = $this->applyCityRestriction($query);
+        
+        // Filter by city if provided (only show cities admin has access to)
         if ($request->has('city_id') && $request->city_id) {
-            $query->where('city_id', $request->city_id);
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (in_array($request->city_id, $accessibleCityIds)) {
+                $query->where('city_id', $request->city_id);
+            }
         }
         
         // Filter by read status if provided
@@ -40,7 +73,10 @@ class ContactUsController extends Controller
         }
         
         $contacts = $query->latest()->paginate(25);
-        $cities = City::all();
+        
+        // Only show cities admin has access to in filter dropdown
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->get();
         
         return view('contact.index', compact('contacts', 'cities'));
     }
@@ -48,6 +84,12 @@ class ContactUsController extends Controller
     // Show the specified contact message
     public function show(ContactUs $contact)
     {
+        // Check if admin has access to this contact's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($contact->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to view this contact message.');
+        }
+
         $contact->load(['city', 'user']);
         
         // Mark as read when viewed
@@ -61,6 +103,15 @@ class ContactUsController extends Controller
     // Toggle read status
     public function toggleRead(ContactUs $contact)
     {
+        // Check if admin has access to this contact's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($contact->city_id, $accessibleCityIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify this contact message.'
+            ], 403);
+        }
+
         $contact->update(['is_read' => !$contact->is_read]);
         
         $status = $contact->is_read ? 'marked as read' : 'marked as unread';
@@ -71,6 +122,12 @@ class ContactUsController extends Controller
     // Delete the specified contact message
     public function destroy(ContactUs $contact)
     {
+        // Check if admin has access to this contact's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($contact->city_id, $accessibleCityIds)) {
+            abort(403, 'You do not have permission to delete this contact message.');
+        }
+
         $contact->delete();
         
         return redirect()
@@ -87,23 +144,91 @@ class ContactUsController extends Controller
             'contact_ids.*' => 'exists:contact_us,id'
         ]);
 
-        $contacts = ContactUs::whereIn('id', $request->contact_ids);
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        // Only get contacts that are in accessible cities
+        $contacts = ContactUs::whereIn('id', $request->contact_ids)
+                            ->whereIn('city_id', $accessibleCityIds);
+
+        $contactsToProcess = $contacts->get();
+        $processedCount = $contactsToProcess->count();
+        $totalRequested = count($request->contact_ids);
+
+        if ($processedCount == 0) {
+            return redirect()->route('contact.index')
+                          ->with('error', 'No messages were processed. You may not have permission to access the selected messages.');
+        }
 
         switch ($request->action) {
             case 'mark_read':
                 $contacts->update(['is_read' => true]);
-                $message = 'Selected messages marked as read';
+                $message = "Marked {$processedCount} messages as read";
                 break;
             case 'mark_unread':
                 $contacts->update(['is_read' => false]);
-                $message = 'Selected messages marked as unread';
+                $message = "Marked {$processedCount} messages as unread";
                 break;
             case 'delete':
                 $contacts->delete();
-                $message = 'Selected messages deleted successfully';
+                $message = "Deleted {$processedCount} messages successfully";
                 break;
         }
 
+        // Add notice if some messages were skipped due to permissions
+        if ($processedCount < $totalRequested) {
+            $skipped = $totalRequested - $processedCount;
+            $message .= ". {$skipped} messages were skipped (no permission).";
+        }
+
         return redirect()->route('contact.index')->with('status', $message);
+    }
+
+    // Get statistics for dashboard or reports
+    public function getStats()
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $stats = [
+            'total' => ContactUs::whereIn('city_id', $accessibleCityIds)->count(),
+            'unread' => ContactUs::whereIn('city_id', $accessibleCityIds)->where('is_read', false)->count(),
+            'read' => ContactUs::whereIn('city_id', $accessibleCityIds)->where('is_read', true)->count(),
+            'today' => ContactUs::whereIn('city_id', $accessibleCityIds)->whereDate('created_at', today())->count(),
+        ];
+        
+        return $stats;
+    }
+
+    // Mark multiple messages as read (for notifications)
+    public function markAsRead(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:contact_us,id'
+        ]);
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $updatedCount = ContactUs::whereIn('id', $request->ids)
+                                ->whereIn('city_id', $accessibleCityIds)
+                                ->where('is_read', false)
+                                ->update(['is_read' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Marked {$updatedCount} messages as read",
+            'updated_count' => $updatedCount
+        ]);
+    }
+
+    // Get unread count for notifications
+    public function getUnreadCount()
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        $count = ContactUs::whereIn('city_id', $accessibleCityIds)
+                         ->where('is_read', false)
+                         ->count();
+
+        return response()->json(['unread_count' => $count]);
     }
 }
