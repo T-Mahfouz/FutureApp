@@ -14,7 +14,7 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable;
     
     // protected $guarded = [];
-    protected $fillable = ['name', 'phone', 'city_id', 'email', 'password', 'email_verified_at'];
+    protected $guarded = ['id'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -48,7 +48,12 @@ class User extends Authenticatable implements JWTSubject
     
     public function city()
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(City::class)->withDefault();
+    }
+    
+    public function image()
+    {
+        return $this->belongsTo(Media::class, 'image_id')->withDefault();
     }
     /**
      * Get the attributes that should be cast.

@@ -108,7 +108,7 @@ if (!function_exists('resizeImage')) {
                 $maxHeight, 
                 $minDimension
             );
-
+            
             $newWidth = $newDimensionsArray['width'];
             $newHeight = $newDimensionsArray['height'];
 
@@ -135,7 +135,6 @@ if (!function_exists('resizeImage')) {
                     throw new Exception("Failed to create directory: {$destination}");
                 }
             }
-            
             // Resize and save the image
             $img->resize($newWidth, $newHeight)->save($finalPath, $quality);
 
@@ -207,8 +206,9 @@ if (!function_exists('imagesSizes')) {
 }
 
 if (!function_exists('getFullImagePath')) {
-    function getFullImagePath($model, $folder = 'uploads') {
-        return $model->image_id ? $model->image->realPath($folder) : null;
+    function getFullImagePath($model, $folder = 'storage') {
+        $path = $folder . DIRECTORY_SEPARATOR . $model->image->path;
+        return $model->image_id ? url($path)  : null;
     }
 }
 
@@ -224,6 +224,9 @@ if (!function_exists('getImagePath')) {
 
 if (!function_exists('getUser')) {
     function getUser($guard = 'api') {
+        if (Auth::guest()) {
+            return null;
+        }
         return Auth::guard($guard)->user();
     }
 }

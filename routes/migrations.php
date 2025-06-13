@@ -24,85 +24,118 @@ use Illuminate\Support\Facades\Route;
 */
 
 
-// Route::post('/cities', [CityMigrationController::class, 'migrateAllCities']);
-// Route::get('/users/status', [CityMigrationController::class, 'getMigrationStatus']);
-// Route::post('/cities/{cityId}', [CityMigrationController::class, 'migrateSingleCity']);
+/* 
+
+Route::post('/cities', [CityMigrationController::class, 'migrateAllCities']);
+Route::get('/users/status', [CityMigrationController::class, 'getMigrationStatus']);
+Route::post('/cities/{cityId}', [CityMigrationController::class, 'migrateSingleCity']);
 
 
-// Route::post('/categories/parents', [CategoryMigrationController::class, 'migrateParents']);
-// Route::post('/categories/children', [CategoryMigrationController::class, 'migrateChildren']);
+Route::post('/categories/parents', [CategoryMigrationController::class, 'migrateParents']);
+Route::post('/categories/children', [CategoryMigrationController::class, 'migrateChildren']);
 
-// Route::post('/users', [UserMigrationController::class, 'migrateAllUsers']);
-// Route::get('/users/status', [UserMigrationController::class, 'getUserMigrationStatus']);
-// Route::post('/users/{userId}', [UserMigrationController::class, 'migrateSingleUser']);
+Route::post('/users', [UserMigrationController::class, 'migrateAllUsers']);
+Route::get('/users/status', [UserMigrationController::class, 'getUserMigrationStatus']);
+Route::post('/users/{userId}', [UserMigrationController::class, 'migrateSingleUser']);
 
-// // Institute to Service Migration Routes
-// Route::post('/institutes/parents', [InstituteMigrationController::class, 'parents']);
-// Route::post('/institutes/children', [InstituteMigrationController::class, 'children']);
-// Route::get('/institutes/status', [InstituteMigrationController::class, 'getMigrationStatus']);
-// Route::post('/institutes/reset', [InstituteMigrationController::class, 'resetMigration']);
-
-
-// Route::post('/institute-images', [ServiceImagesMigrationController::class, 'migrateServiceImages']);
-
-// Route::post('/settings/aboutus', [SettingsMigrationController::class, 'migrateAboutUs']);
+// Institute to Service Migration Routes
+Route::post('/institutes/parents', [InstituteMigrationController::class, 'parents']);
+Route::post('/institutes/children', [InstituteMigrationController::class, 'children']);
+Route::get('/institutes/status', [InstituteMigrationController::class, 'getMigrationStatus']);
+Route::post('/institutes/reset', [InstituteMigrationController::class, 'resetMigration']);
 
 
-// Route::post('/admins', [AdminMigrationController::class, 'migrateAllAdmins']);
-// Route::get('/admins/status', [AdminMigrationController::class, 'getAdminMigrationStatus']);
-// Route::post('/admins/{adminId}', [AdminMigrationController::class, 'migrateSingleAdmin']);
+Route::post('/institute-images', [ServiceImagesMigrationController::class, 'migrateServiceImages']);
 
-// Route::post('/notifications', [NotificationMigrationController::class, 'migrateNotifications']);
-// Route::get('/notifications/status', [NotificationMigrationController::class, 'getNotificationMigrationStatus']);
-// Route::post('/notifications/{notificationId}', [NotificationMigrationController::class, 'migrateSingleNotification']);
+Route::post('/settings/aboutus', [SettingsMigrationController::class, 'migrateAboutUs']);
 
-// Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
-// Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
-// Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
 
-// Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
-// Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
-// Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
+Route::post('/admins', [AdminMigrationController::class, 'migrateAllAdmins']);
+Route::get('/admins/status', [AdminMigrationController::class, 'getAdminMigrationStatus']);
+Route::post('/admins/{adminId}', [AdminMigrationController::class, 'migrateSingleAdmin']);
+
+Route::post('/notifications', [NotificationMigrationController::class, 'migrateNotifications']);
+Route::get('/notifications/status', [NotificationMigrationController::class, 'getNotificationMigrationStatus']);
+Route::post('/notifications/{notificationId}', [NotificationMigrationController::class, 'migrateSingleNotification']);
+
+Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
+Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
+Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
+
+Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
+Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
+Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']); 
+
+*/
 
 
 
 
 ############################# OLD ROUTES #########################
-// Route::post('/institutes/parents', [InstituteMigrationController::class, 'parents']);
-// Route::post('/institutes/children', [InstituteMigrationController::class, 'children']);
-// Route::post('/institutes/remains', [InstituteMigrationController::class, 'remains']);
-// Route::get('/institutes/status', [InstituteMigrationController::class, 'getMigrationStatus']);
-// Route::post('/institutes/reset', [InstituteMigrationController::class, 'resetMigration']);
+/* 
+
+Route::post('/institutes/parents', [InstituteMigrationController::class, 'parents']);
+Route::post('/institutes/children', [InstituteMigrationController::class, 'children']);
+Route::post('/institutes/remains', [InstituteMigrationController::class, 'remains']);
+Route::get('/institutes/status', [InstituteMigrationController::class, 'getMigrationStatus']);
+Route::post('/institutes/reset', [InstituteMigrationController::class, 'resetMigration']);
 
 
 
-// Route::post('/cities', [CityMigrationController::class, 'migrateAllCities']);
-// Route::get('/users/status', [CityMigrationController::class, 'getMigrationStatus']);
-// Route::post('/cities/{cityId}', [CityMigrationController::class, 'migrateSingleCity']);
+Route::post('/cities', [CityMigrationController::class, 'migrateAllCities']);
+Route::get('/users/status', [CityMigrationController::class, 'getMigrationStatus']);
+Route::post('/cities/{cityId}', [CityMigrationController::class, 'migrateSingleCity']);
 
 
-// Route::post('/users', [UserMigrationController::class, 'migrateAllUsers']);
-// Route::get('/users/status', [UserMigrationController::class, 'getUserMigrationStatus']);
-// Route::post('/users/{userId}', [UserMigrationController::class, 'migrateSingleUser']);
+Route::post('/users', [UserMigrationController::class, 'migrateAllUsers']);
+Route::get('/users/status', [UserMigrationController::class, 'getUserMigrationStatus']);
+Route::post('/users/{userId}', [UserMigrationController::class, 'migrateSingleUser']);
 
-// Route::post('/admins', [AdminMigrationController::class, 'migrateAllAdmins']);
-// Route::get('/admins/status', [AdminMigrationController::class, 'getAdminMigrationStatus']);
-// Route::post('/admins/{adminId}', [AdminMigrationController::class, 'migrateSingleAdmin']);
+Route::post('/admins', [AdminMigrationController::class, 'migrateAllAdmins']);
+Route::get('/admins/status', [AdminMigrationController::class, 'getAdminMigrationStatus']);
+Route::post('/admins/{adminId}', [AdminMigrationController::class, 'migrateSingleAdmin']);
 
-// Route::post('/notifications', [NotificationMigrationController::class, 'migrateNotifications']);
-// Route::get('/notifications/status', [NotificationMigrationController::class, 'getNotificationMigrationStatus']);
-// Route::post('/notifications/{notificationId}', [NotificationMigrationController::class, 'migrateSingleNotification']);
+Route::post('/notifications', [NotificationMigrationController::class, 'migrateNotifications']);
+Route::get('/notifications/status', [NotificationMigrationController::class, 'getNotificationMigrationStatus']);
+Route::post('/notifications/{notificationId}', [NotificationMigrationController::class, 'migrateSingleNotification']);
 
-// Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
-// Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
-// Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
+Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
+Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
+Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
 
-// Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
-// Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
-// Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
+Route::post('/ads', [AdMigrationController::class, 'migrateAds']);
+Route::get('/ads/status', [AdMigrationController::class, 'getAdMigrationStatus']);
+Route::post('/ads/reset', [AdMigrationController::class, 'resetAdMigration']);
 
 
-// Route::post('/images', [ServiceImagesMigrationController::class, 'migrateServiceImages']);
-// Route::post('/categories/prents', [CategoryMigrationController::class, 'migrateParents']);
-// Route::post('/categories/children', [CategoryMigrationController::class, 'migrateChildren']);
-// Route::post('/settings/aboutus', [SettingsMigrationController::class, 'migrateAboutUs']);
+Route::post('/images', [ServiceImagesMigrationController::class, 'migrateServiceImages']);
+Route::post('/categories/prents', [CategoryMigrationController::class, 'migrateParents']);
+Route::post('/categories/children', [CategoryMigrationController::class, 'migrateChildren']);
+Route::post('/settings/aboutus', [SettingsMigrationController::class, 'migrateAboutUs']); 
+
+*/
+
+
+
+
+
+
+
+
+/* 
+Route::prefix('media-cleanup')->group(function () {
+    Route::get('/paths', [MediaCleanupController::class, 'getAllPaths']);
+    Route::get('/storage-info', [MediaCleanupController::class, 'getStorageInfo']);
+    Route::get('/analyze', [MediaCleanupController::class, 'analyzeMedia']);
+    Route::post('/move-unreferenced', [MediaCleanupController::class, 'moveUnreferencedImages']);
+    Route::post('/restore', [MediaCleanupController::class, 'restoreImages']);
+    Route::delete('/delete-unreferenced', [MediaCleanupController::class, 'deleteUnreferencedImages']);
+    Route::get('/debug-storage', [MediaCleanupController::class, 'debugStoragePaths']);
+
+
+    Route::get('/analyze-images', [ResizeImageController::class, 'analyzeImages']);
+    Route::get('/resize-all', [ResizeImageController::class, 'resizeAllImages']);
+    Route::post('/resize-single', [ResizeImageController::class, 'resizeSingleImage']);
+    Route::post('/restore-backup', [ResizeImageController::class, 'restoreFromBackup']);
+    Route::delete('/delete-backup', [ResizeImageController::class, 'deleteBackup']);
+}); */
