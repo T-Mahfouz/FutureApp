@@ -21,7 +21,7 @@
 		<div class="mb-3 mb-md-4 d-flex justify-content-between">
 			<div class="h3 mb-0">Ads</div>
 			<a href="{{ route('ad.create') }}" class="btn btn-primary">
-				Add new
+				<i class="gd-plus"></i> Add New
 			</a>
 		</div>
 
@@ -30,7 +30,7 @@
 			<div class="card-header d-flex justify-content-between align-items-center">
 				<h6 class="mb-0">Search & Filters</h6>
 				<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#filterSection" aria-expanded="true" aria-controls="filterSection">
-					<i class="gd-angle-down"></i> Collapse
+					<i class="gd-angle-down"></i> Toggle
 				</button>
 			</div>
 			<div class="collapse show" id="filterSection">
@@ -49,16 +49,37 @@
 								</select>
 							</div>
 							<div class="col-md-2">
+								<label for="category_id" class="form-label">Category</label>
+								<select name="category_id" class="form-control" id="category_id">
+									<option value="">All Categories</option>
+									@foreach($categories as $category)
+										<option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+											{{ $category->name }}
+										</option>
+									@endforeach
+								</select>
+							</div>
+							<div class="col-md-2">
+								<label for="service_id" class="form-label">Service</label>
+								<select name="service_id" class="form-control" id="service_id">
+									<option value="">All Services</option>
+									@foreach($services as $service)
+										<option value="{{ $service->id }}" {{ request('service_id') == $service->id ? 'selected' : '' }}>
+											{{ $service->name }}
+										</option>
+									@endforeach
+								</select>
+							</div>
+							<div class="col-md-2">
 								<label for="location" class="form-label">Location</label>
 								<select name="location" class="form-control" id="location">
 									<option value="">All Locations</option>
 									<option value="home" {{ request('location') == 'home' ? 'selected' : '' }}>Home</option>
 									<option value="category_profile" {{ request('location') == 'category_profile' ? 'selected' : '' }}>Category Profile</option>
 									<option value="service_profile" {{ request('location') == 'service_profile' ? 'selected' : '' }}>Service Profile</option>
-									<option value="all_locations" {{ request('location') == 'all_locations' ? 'selected' : '' }}>All Locations</option> <!-- NEW: Add all_locations filter -->
+									<option value="all_locations" {{ request('location') == 'all_locations' ? 'selected' : '' }}>All Locations</option>
 								</select>
 							</div>
-							<!-- NEW: Status filter -->
 							<div class="col-md-2">
 								<label for="status" class="form-label">Status</label>
 								<select name="status" class="form-control" id="status">
@@ -67,17 +88,23 @@
 									<option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Expired</option>
 								</select>
 							</div>
-							<div class="col-md-4">
-								<label for="search" class="form-label">Search by Name</label>
-								<input type="text" name="search" class="form-control" id="search" placeholder="Search by name..." value="{{ request('search') }}">
-							</div>
 							<div class="col-md-2 d-flex align-items-end">
 								<button type="submit" class="btn btn-primary btn-block">Filter</button>
 							</div>
 						</div>
 
+						<div class="row mt-2">
+							<div class="col-md-10">
+								<label for="search" class="form-label">Search</label>
+								<input type="text" name="search" class="form-control" id="search" placeholder="Search by name, category, or service..." value="{{ request('search') }}">
+							</div>
+							<div class="col-md-2 d-flex align-items-end">
+								<a href="{{ route('ad.index') }}" class="btn btn-outline-secondary btn-block">Clear</a>
+							</div>
+						</div>
+
 						<!-- Active Filters Display -->
-						@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+						@if(request()->hasAny(['search', 'city_id', 'category_id', 'service_id', 'location', 'status']))
 						<div class="row mt-3">
 							<div class="col-12">
 								<div class="border-top pt-3">
@@ -89,6 +116,12 @@
 										@if(request('city_id'))
 											<span class="badge badge-info mr-1 mb-1">City: {{ $cities->find(request('city_id'))->name ?? 'Unknown' }}</span>
 										@endif
+										@if(request('category_id'))
+											<span class="badge badge-success mr-1 mb-1">Category: {{ $categories->find(request('category_id'))->name ?? 'Unknown' }}</span>
+										@endif
+										@if(request('service_id'))
+											<span class="badge badge-primary mr-1 mb-1">Service: {{ $services->find(request('service_id'))->name ?? 'Unknown' }}</span>
+										@endif
 										@if(request('location'))
 											@php
 												$locationLabels = [
@@ -98,12 +131,11 @@
 													'all_locations' => 'All Locations'
 												];
 											@endphp
-											<span class="badge badge-success mr-1 mb-1">Location: {{ $locationLabels[request('location')] ?? request('location') }}</span>
+											<span class="badge badge-warning mr-1 mb-1">Location: {{ $locationLabels[request('location')] ?? request('location') }}</span>
 										@endif
 										@if(request('status'))
 											<span class="badge badge-{{ request('status') == 'active' ? 'success' : 'danger' }} mr-1 mb-1">{{ ucfirst(request('status')) }}</span>
 										@endif
-										<a href="{{ route('ad.index') }}" class="btn btn-sm btn-outline-secondary ml-2">Clear All</a>
 									</div>
 								</div>
 							</div>
@@ -120,18 +152,11 @@
 			<div>
 				<small class="text-muted">
 					Showing {{ $ads->firstItem() ?? 0 }} to {{ $ads->lastItem() ?? 0 }} of {{ $ads->total() }} results
-					@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+					@if(request()->hasAny(['search', 'city_id', 'category_id', 'service_id', 'location', 'status']))
 						<span class="badge badge-info ml-1">Filtered</span>
 					@endif
 				</small>
 			</div>
-			@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
-			<div>
-				<a href="{{ route('ad.index') }}" class="btn btn-sm btn-outline-secondary">
-					<i class="gd-close"></i> Clear All Filters
-				</a>
-			</div>
-			@endif
 		</div>
 
 		<!-- Bulk Actions -->
@@ -163,11 +188,9 @@
 						<th class="font-weight-semi-bold border-top-0 py-2">Name</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Location</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">City</th>
-						<!-- NEW: Link column -->
+						<th class="font-weight-semi-bold border-top-0 py-2">Category</th>
+						<th class="font-weight-semi-bold border-top-0 py-2">Service</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Link</th>
-						<!-- NEW: Expiration Date column -->
-						<th class="font-weight-semi-bold border-top-0 py-2">Expiration Date</th>
-						<!-- NEW: Status column -->
 						<th class="font-weight-semi-bold border-top-0 py-2">Status</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Created Date</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Actions</th>
@@ -192,7 +215,7 @@
 						<td class="align-middle py-3">
 							<div class="d-flex align-items-center">
 								<div>
-									<strong>{{ $ad->name }}</strong>
+									<strong>{{ Str::limit($ad->name, 30) }}</strong>
 								</div>
 							</div>
 						</td>
@@ -202,13 +225,13 @@
 									'home' => 'Home',
 									'category_profile' => 'Category Profile',
 									'service_profile' => 'Service Profile',
-									'all_locations' => 'All Locations' // NEW: Add all_locations label
+									'all_locations' => 'All Locations'
 								];
 								$locationColors = [
 									'home' => 'primary',
 									'category_profile' => 'success',
 									'service_profile' => 'info',
-									'all_locations' => 'warning' // NEW: Add color for all_locations
+									'all_locations' => 'warning'
 								];
 							@endphp
 							<span class="badge badge-{{ $locationColors[$ad->location] ?? 'secondary' }}">
@@ -218,40 +241,40 @@
 						<td class="py-3">
 							<span class="badge badge-info">{{ $ad->city->name }}</span>
 						</td>
-						<!-- NEW: Link column content -->
+						<td class="py-3">
+							@if($ad->category)
+								<span class="badge badge-success">{{ Str::limit($ad->category->name, 20) }}</span>
+							@else
+								<span class="text-muted font-italic">None</span>
+							@endif
+						</td>
+						<td class="py-3">
+							@if($ad->service)
+								<span class="badge badge-primary">{{ Str::limit($ad->service->name, 20) }}</span>
+							@else
+								<span class="text-muted font-italic">None</span>
+							@endif
+						</td>
 						<td class="py-3">
 							@if($ad->link)
 								<a href="{{ $ad->link }}" target="_blank" class="btn btn-sm btn-outline-primary" title="{{ $ad->link }}">
-									<i class="gd-link"></i> Link
+									<i class="gd-link"></i>
 								</a>
 							@else
-								<span class="text-muted font-italic">No link</span>
+								<span class="text-muted font-italic">None</span>
 							@endif
 						</td>
-						<!-- NEW: Expiration Date column content -->
 						<td class="py-3">
-							@if($ad->expiration_date)
-								<div class="text-center">
-									@if($ad->expiration_date->isPast())
-										<span class="badge badge-danger">Expired</span>
-										<br><small class="text-muted">{{ $ad->expiration_date->format('M d, Y') }}</small>
-										<br><small class="text-muted">{{ $ad->expiration_date->diffForHumans() ?? '---' }}</small>
-									@else
-										<span class="badge badge-warning">Expires Soon</span>
-										<br><small class="text-muted">{{ $ad->expiration_date->format('M d, Y') }}</small>
-										<br><small class="text-muted">{{ $ad->expiration_date->diffForHumans() ?? '---' }}</small>
-									@endif
-								</div>
-							@else
-								<span class="text-muted font-italic">No expiration</span>
-							@endif
-						</td>
-						<!-- NEW: Status column content -->
-						<td class="py-3">
-							@if($ad->expiration_date && $ad->expiration_date->isPast())
+							@if($ad->isExpired())
 								<span class="badge badge-danger">Expired</span>
+								@if($ad->expiration_date)
+									<br><small class="text-muted">{{ $ad->expiration_date->diffForHumans() }}</small>
+								@endif
 							@else
 								<span class="badge badge-success">Active</span>
+								@if($ad->expiration_date)
+									<br><small class="text-muted">Expires {{ $ad->expiration_date->diffForHumans() }}</small>
+								@endif
 							@endif
 						</td>
 						<td class="py-3">{{ $ad->created_at ? $ad->created_at->diffForHumans() : '---' }}</td>
@@ -271,8 +294,8 @@
 					</tr>
 					@empty
 					<tr>
-						<td colspan="11" class="text-center"> <!-- NEW: Updated colspan to 11 -->
-							@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+						<td colspan="12" class="text-center">
+							@if(request()->hasAny(['search', 'city_id', 'category_id', 'service_id', 'location', 'status']))
 								<strong>No ads found matching your filters</strong><br>
 								<small class="text-muted">Try adjusting your search criteria</small><br>
 								<a href="{{ route('ad.index') }}" class="btn btn-outline-primary btn-sm mt-2">Clear Filters</a>
@@ -304,12 +327,10 @@ document.addEventListener('DOMContentLoaded', function() {
     [selectAllHeader, selectAll].forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             checkboxes.forEach(cb => cb.checked = this.checked);
-            // Sync both select-all checkboxes
             selectAllHeader.checked = selectAll.checked = this.checked;
         });
     });
     
-    // Update select-all when individual checkboxes change
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -336,15 +357,10 @@ function confirmBulkAction() {
     return confirm(`Are you sure you want to ${actionText} ${checkedBoxes.length} ad(s)?`);
 }
 
-
-
 const alertContainer = document.getElementById('feedback-container');
-    
-// Remove existing alerts
 alertContainer.innerHTML = '';
 
 function destroy(event, id) {
-	
     event.preventDefault();
     
 	if(!confirm('Delete this ad? This action cannot be undone.')) {
@@ -352,15 +368,13 @@ function destroy(event, id) {
 	}
     let devID = `ad-row-${id}`;
 
-    const url = `{{ route('ad.destroy', ['id' => ':id']) }}`.replace(':id', id);
+    const url = `/ads/${id}`;
     const csrf = $('meta[name="csrf-token"]').attr('content');
 
     let alertClass = '';
     let iconClass = '';
     let title = '';
     let message = '';
-
-    
 
     $.ajax({
         method: "DELETE",
@@ -370,21 +384,16 @@ function destroy(event, id) {
         }
     })
     .done(function( data ) {
-
         alertClass = 'alert-success';
         iconClass = 'gd-info-circle';
         title = 'Success!';
-
         message = data.message
-        
         $("#"+devID).remove();
-        
     }).fail(function( err ) {
         alertClass = 'alert-danger';
         iconClass = 'gd-alert';
         title = 'Error!';
-        message = err;
-
+        message = err.responseJSON ? err.responseJSON.message : 'An error occurred';
     }).always(function() {
         let alertHtml = `
             <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
@@ -396,12 +405,9 @@ function destroy(event, id) {
             </div>
         `;
         alertContainer.innerHTML = alertHtml;
-        
         window.scrollTo(0, 0);
-
     });
 }
-
 </script>
 
 @endsection

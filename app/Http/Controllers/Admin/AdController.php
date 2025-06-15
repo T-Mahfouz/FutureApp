@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Ad;
 use App\Models\City;
+use App\Models\Category;
+use App\Models\Service;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -42,7 +44,7 @@ class AdController extends Controller
     // Show all ads
     public function index(Request $request)
     {
-        $query = Ad::with(['city', 'image']);
+        $query = Ad::with(['city', 'category', 'service', 'image']);
         
         // Apply city restriction based on admin's assigned cities
         $query = $this->applyCityRestriction($query);
@@ -55,6 +57,16 @@ class AdController extends Controller
             }
         }
         
+        // Filter by category if provided
+        if ($request->has('category_id') && $request->category_id) {
+            $query->where('category_id', $request->category_id);
+        }
+        
+        // Filter by service if provided
+        if ($request->has('service_id') && $request->service_id) {
+            $query->where('service_id', $request->service_id);
+        }
+        
         // Filter by location if provided
         if ($request->has('location') && $request->location) {
             $query->where('location', $request->location);
@@ -62,28 +74,37 @@ class AdController extends Controller
         
         if ($request->has('status') && $request->status) {
             if ($request->status === 'active') {
-                $query->where(function($q) {
-                    $q->whereNull('expiration_date')
-                      ->orWhere('expiration_date', '>', now());
-                });
+                $query->active();
             } elseif ($request->status === 'expired') {
-                $query->where('expiration_date', '<=', now());
+                $query->expired();
             }
         }
         
         // Search by name
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where('name', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('category', function($categoryQuery) use ($search) {
+                      $categoryQuery->where('name', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('service', function($serviceQuery) use ($search) {
+                      $serviceQuery->where('name', 'LIKE', "%{$search}%");
+                  });
+            });
         }
         
-        $ads = $query->latest()->paginate(25);
+        $ads = $query->latest()->paginate(25)->withQueryString();
         
         // Only show cities admin has access to in filter dropdown
         $accessibleCityIds = $this->getAccessibleCityIds();
-        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
         
-        return view('ad.index', compact('ads', 'cities'));
+        // Get categories and services for filtering (from accessible cities only)
+        $categories = Category::whereIn('city_id', $accessibleCityIds)->orderBy('name')->get();
+        $services = Service::whereIn('city_id', $accessibleCityIds)->orderBy('name')->get();
+        
+        return view('ad.index', compact('ads', 'cities', 'categories', 'services'));
     }
 
     // Show the form to create new ad
@@ -93,7 +114,7 @@ class AdController extends Controller
         
         // Only show cities admin has access to
         $accessibleCityIds = $this->getAccessibleCityIds();
-        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
         
         return view('ad.edit', compact('ad', 'cities'));
     }
@@ -108,9 +129,23 @@ class AdController extends Controller
         }
 
         // Only show cities admin has access to
-        $cities = City::whereIn('id', $accessibleCityIds)->get();
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
         
-        return view('ad.edit', compact('ad', 'cities'));
+        // Get categories for the selected city
+        $categories = Category::where('city_id', $ad->city_id)->orderBy('name')->get();
+        
+        // Get services for the selected city and category (if category is selected)
+        $services = collect();
+        if ($ad->category_id) {
+            $services = Service::where('city_id', $ad->city_id)
+                             ->whereHas('categories', function($q) use ($ad) {
+                                 $q->where('categories.id', $ad->category_id);
+                             })
+                             ->orderBy('name')
+                             ->get();
+        }
+        
+        return view('ad.edit', compact('ad', 'cities', 'categories', 'services'));
     }
 
     // Save a newly created ad
@@ -144,6 +179,34 @@ class AdController extends Controller
                     $fail('You do not have permission to create/edit ads in this city.');
                 }
             }],
+            'category_id' => ['nullable', 'exists:categories,id', function ($attribute, $value, $fail) use ($request) {
+                if ($value && $request->city_id) {
+                    $category = Category::find($value);
+                    if ($category && $category->city_id != $request->city_id) {
+                        $fail('The selected category must belong to the selected city.');
+                    }
+                }
+            }],
+            'service_id' => ['nullable', 'exists:services,id', function ($attribute, $value, $fail) use ($request) {
+                if ($value && $request->city_id) {
+                    $service = Service::find($value);
+                    if ($service && $service->city_id != $request->city_id) {
+                        $fail('The selected service must belong to the selected city.');
+                    }
+                    
+                    // If category is selected, ensure service belongs to that category
+                    if ($request->category_id) {
+                        $serviceInCategory = Service::where('id', $value)
+                                                  ->whereHas('categories', function($q) use ($request) {
+                                                      $q->where('categories.id', $request->category_id);
+                                                  })
+                                                  ->exists();
+                        if (!$serviceInCategory) {
+                            $fail('The selected service must belong to the selected category.');
+                        }
+                    }
+                }
+            }],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
@@ -152,11 +215,8 @@ class AdController extends Controller
         // Handle image upload
         $imageId = $ad->image_id;
         if($request->hasFile('image')){
-
             $image = $request->file('image');
-
             $media = resizeImage($image, $this->storagePath);
-            
             $imageId = $media->id ?? null;
             
             // Delete old image if exists
@@ -172,6 +232,8 @@ class AdController extends Controller
         $ad->link = $request->input('link');
         $ad->expiration_date = $request->input('expiration_date') ? Carbon::parse($request->input('expiration_date')) : null;
         $ad->city_id = $request->input('city_id');
+        $ad->category_id = $request->input('category_id');
+        $ad->service_id = $request->input('service_id');
         $ad->image_id = $imageId;
 
         $ad->save();
@@ -192,7 +254,7 @@ class AdController extends Controller
             abort(403, 'You do not have permission to view this ad.');
         }
 
-        $ad->load(['city', 'image']);
+        $ad->load(['city', 'category', 'service', 'image']);
         return view('ad.show', compact('ad'));
     }
 
@@ -215,7 +277,6 @@ class AdController extends Controller
                 return response()->json([
                         'message' => 'You do not have permission to delete this ad.'
                     ], 403);
-                // abort(403, 'You do not have permission to delete this ad.');
             }
             
             if($ad->image){
@@ -278,6 +339,53 @@ class AdController extends Controller
 
         return redirect()->route('ad.index')->with('status', $message);
     }
+
+    /**
+     * Get categories for a specific city (AJAX)
+     */
+    public function getCategoriesByCity(Request $request)
+    {
+        $cityId = $request->get('city_id');
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        if (!in_array($cityId, $accessibleCityIds)) {
+            return response()->json(['error' => 'No permission for this city'], 403);
+        }
+        
+        $categories = Category::where('city_id', $cityId)
+                            ->where('active', true)
+                            ->orderBy('name')
+                            ->get(['id', 'name']);
+        
+        return response()->json($categories);
+    }
+
+    /**
+     * Get services for a specific city and category (AJAX)
+     */
+    public function getServicesByCityAndCategory(Request $request)
+    {
+        $cityId = $request->get('city_id');
+        $categoryId = $request->get('category_id');
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        if (!in_array($cityId, $accessibleCityIds)) {
+            return response()->json(['error' => 'No permission for this city'], 403);
+        }
+        
+        $query = Service::where('city_id', $cityId)->where('valid', true);
+        
+        if ($categoryId) {
+            $query->whereHas('categories', function($q) use ($categoryId) {
+                $q->where('categories.id', $categoryId);
+            });
+        }
+        
+        $services = $query->orderBy('name')->get(['id', 'name']);
+        
+        return response()->json($services);
+    }
+
     public function getLocationOptions()
     {
         return [

@@ -26,7 +26,7 @@
 
 		<!-- Form -->
 		<div>
-			<form method="post" action="{{ $ad->id ? route('ad.update', $ad) : route('ad.store') }}" enctype="multipart/form-data">
+			<form method="post" action="{{ $ad->id ? route('ad.update', $ad) : route('ad.store') }}" enctype="multipart/form-data" id="adForm">
                 @if($ad->id)
 				<input type="hidden" name="_method" value="patch">
                 @endif
@@ -58,7 +58,7 @@
 											<option value="home" {{ old('location', $ad->location) == 'home' ? 'selected' : '' }}>Home</option>
 											<option value="category_profile" {{ old('location', $ad->location) == 'category_profile' ? 'selected' : '' }}>Category Profile</option>
 											<option value="service_profile" {{ old('location', $ad->location) == 'service_profile' ? 'selected' : '' }}>Service Profile</option>
-											<option value="all_locations" {{ old('location', $ad->location) == 'all_locations' ? 'selected' : '' }}>All Locations</option> <!-- NEW: Add all_locations option -->
+											<option value="all_locations" {{ old('location', $ad->location) == 'all_locations' ? 'selected' : '' }}>All Locations</option>
 										</select>
 										@if($errors->has('location'))
 											<div class="invalid-feedback">{{ $errors->first('location') }}</div>
@@ -80,7 +80,45 @@
 									</div>
 								</div>
 
-								<!-- NEW: Link field -->
+								<!-- Category and Service Selection -->
+								<div class="form-row">
+									<div class="form-group col-12 col-md-6">
+										<label for="category_id">Category</label>
+										<select class="form-control{{ $errors->has('category_id') ? ' is-invalid' : '' }}" id="category_id" name="category_id">
+											<option value="">Select Category (Optional)</option>
+											@if(isset($categories))
+												@foreach($categories as $category)
+													<option value="{{ $category->id }}" {{ old('category_id', $ad->category_id) == $category->id ? 'selected' : '' }}>
+														{{ $category->name }}
+													</option>
+												@endforeach
+											@endif
+										</select>
+										@if($errors->has('category_id'))
+											<div class="invalid-feedback">{{ $errors->first('category_id') }}</div>
+										@endif
+										<small class="form-text text-muted">Select a city first to load categories</small>
+									</div>
+									<div class="form-group col-12 col-md-6">
+										<label for="service_id">Service</label>
+										<select class="form-control{{ $errors->has('service_id') ? ' is-invalid' : '' }}" id="service_id" name="service_id">
+											<option value="">Select Service (Optional)</option>
+											@if(isset($services))
+												@foreach($services as $service)
+													<option value="{{ $service->id }}" {{ old('service_id', $ad->service_id) == $service->id ? 'selected' : '' }}>
+														{{ $service->name }}
+													</option>
+												@endforeach
+											@endif
+										</select>
+										@if($errors->has('service_id'))
+											<div class="invalid-feedback">{{ $errors->first('service_id') }}</div>
+										@endif
+										<small class="form-text text-muted">Select a category to filter services</small>
+									</div>
+								</div>
+
+								<!-- Link field -->
 								<div class="form-row">
 									<div class="form-group col-12">
 										<label for="link">Link URL</label>
@@ -92,7 +130,7 @@
 									</div>
 								</div>
 
-								<!-- NEW: Expiration date field -->
+								<!-- Expiration date field -->
 								<div class="form-row">
 									<div class="form-group col-12 col-md-6">
 										<label for="expiration_date">Expiration Date</label>
@@ -129,6 +167,35 @@
 							</div>
 						</div>
 						@endif
+
+						<!-- Assignment Summary -->
+						<div class="card mb-4">
+							<div class="card-header">
+								<h6 class="mb-0">Assignment Summary</h6>
+							</div>
+							<div class="card-body">
+								<div class="text-center">
+									<div class="mb-3">
+										<strong>City:</strong><br>
+										<span id="selected-city" class="badge badge-info">
+											{{ $ad->city ? $ad->city->name : 'None Selected' }}
+										</span>
+									</div>
+									<div class="mb-3">
+										<strong>Category:</strong><br>
+										<span id="selected-category" class="badge badge-success">
+											{{ $ad->category ? $ad->category->name : 'None Selected' }}
+										</span>
+									</div>
+									<div class="mb-3">
+										<strong>Service:</strong><br>
+										<span id="selected-service" class="badge badge-primary">
+											{{ $ad->service ? $ad->service->name : 'None Selected' }}
+										</span>
+									</div>
+								</div>
+							</div>
+						</div>
 
 						<!-- Ad Status (Edit Mode Only) -->
 						@if($ad->id)
@@ -190,9 +257,11 @@
 								<ul class="mb-0 small">
 									<li>Choose a clear, descriptive name for your ad</li>
 									<li>Select where this ad should appear in the app</li>
-									<li><strong>NEW:</strong> Add a link URL to make the ad clickable</li> <!-- NEW -->
-									<li><strong>NEW:</strong> Set an expiration date to automatically disable the ad</li> <!-- NEW -->
-									<li>Select the appropriate city where this ad will be shown</li>
+									<li><strong>Required:</strong> Select a city for this ad</li>
+									<li><strong>Optional:</strong> Assign to a category to target specific interests</li>
+									<li><strong>Optional:</strong> Assign to a service for more targeted placement</li>
+									<li>Add a link URL to make the ad clickable</li>
+									<li>Set an expiration date to automatically disable the ad</li>
 									<li>Upload a high-quality image that represents your ad</li>
 									<li>Make sure the image is clear and readable at different sizes</li>
 								</ul>
@@ -227,4 +296,129 @@
 		<!-- End Form -->
 	</div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	const citySelect = document.getElementById('city_id');
+	const categorySelect = document.getElementById('category_id');
+	const serviceSelect = document.getElementById('service_id');
+	
+	// Update summary badges
+	function updateSummary() {
+		const selectedCity = citySelect.options[citySelect.selectedIndex].text;
+		const selectedCategory = categorySelect.options[categorySelect.selectedIndex].text;
+		const selectedService = serviceSelect.options[serviceSelect.selectedIndex].text;
+		
+		document.getElementById('selected-city').textContent = citySelect.value ? selectedCity : 'None Selected';
+		document.getElementById('selected-category').textContent = categorySelect.value ? selectedCategory : 'None Selected';
+		document.getElementById('selected-service').textContent = serviceSelect.value ? selectedService : 'None Selected';
+	}
+
+	// Load categories when city changes
+	citySelect.addEventListener('change', function() {
+		const cityId = this.value;
+		
+		// Clear category and service dropdowns
+		categorySelect.innerHTML = '<option value="">Select Category (Optional)</option>';
+		serviceSelect.innerHTML = '<option value="">Select Service (Optional)</option>';
+		
+		updateSummary();
+		
+		let url = `{{ route('ad.categories-by-city') }}?city_id=${cityId}`;
+
+		if (cityId) {
+			$.ajax({
+				url: url,
+				type: 'GET',
+				dataType: 'json',
+				success: function(data) {
+					if (data.error) {
+						console.error('Error loading categories:', data.error);
+						return;
+					}
+					
+					data.forEach(category => {
+						const option = document.createElement('option');
+						option.value = category.id;
+						option.textContent = category.name;
+						categorySelect.appendChild(option);
+					});
+					
+					// Restore selected category if editing
+					@if($ad->category_id)
+						categorySelect.value = '{{ $ad->category_id }}';
+						updateSummary();
+						// Trigger category change to load services
+						categorySelect.dispatchEvent(new Event('change'));
+					@endif
+				},
+				error: function(xhr, status, error) {
+					console.error('Error loading categories:', error);
+				}
+			});
+		}
+	});
+
+	// Load services when category changes
+	categorySelect.addEventListener('change', function() {
+		const cityId = citySelect.value;
+		const categoryId = this.value;
+		
+		// Clear service dropdown
+		serviceSelect.innerHTML = '<option value="">Select Service (Optional)</option>';
+		
+		updateSummary();
+		
+		if (cityId) {
+
+			
+			let url = `{{ route('ad.services-by-city-category') }}?city_id=${cityId}`;
+			if (categoryId) {
+				url += `&category_id=${categoryId}`;
+			}
+			
+
+			$.ajax({
+				url: url,
+				type: 'GET',
+				dataType: 'json',
+				success: function(data) {
+					if (data.error) {
+						console.error('Error loading services:', data.error);
+						return;
+					}
+					
+					data.forEach(service => {
+						const option = document.createElement('option');
+						option.value = service.id;
+						option.textContent = service.name;
+						serviceSelect.appendChild(option);
+					});
+					
+					// Restore selected service if editing
+					@if($ad->service_id)
+						serviceSelect.value = '{{ $ad->service_id }}';
+						updateSummary();
+					@endif
+				},
+				error: function(xhr, status, error) {
+					console.error('Error loading services:', error);
+				}
+			});
+		}
+	});
+
+	// Update summary when service changes
+	serviceSelect.addEventListener('change', updateSummary);
+
+	// Initialize summary
+	updateSummary();
+	
+	// If editing, trigger city change to load categories and services
+	@if($ad->city_id)
+		citySelect.dispatchEvent(new Event('change'));
+	@endif
+});
+</script>
+
 @endsection
