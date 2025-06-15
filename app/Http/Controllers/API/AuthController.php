@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\API\InitController;
+use App\Http\Requests\API\User\AuthRequest;
 use App\Http\Requests\API\Users\Auth\ChangePasswordRequest;
 use App\Http\Requests\API\Users\Auth\ResetPasswordRequest;
 use App\Http\Resources\API\AuthResource;
@@ -37,17 +38,23 @@ class AuthController extends InitController
         return jsonResponse(200, 'done.', $data);
     }
 
-    public function register(Request $request)
+    public function register(AuthRequest $request)
     {
         DB::beginTransaction();
         try {
-            $data = $request->only(['email','name']);
+            $data = $request->only(['email','name','city_id','phone']);
             
             if($request->hasFile('image')) {
-                $path = resizeImage($request->image, 'uploads', $allSizes=false);
-                $media = $this->pipeline->setModel('Media')->create(['path' => $path]);
-                $data['image_id'] = $media->id;
+
+                $image = $request->file('image');
+
+                $media = resizeImage($image, $this->storagePath, 'all_images'.DIRECTORY_SEPARATOR.'users');
+            
+                $imageId = $media->id ?? null;
+                
+                $data['image_id'] = $imageId;
             }
+
             $data['password'] = Hash::make($request->password);
             $user = $this->pipeline->setModel('User')->create($data);
             $user->access_token = auth()->guard('api')->tokenById($user->id);
@@ -114,32 +121,6 @@ class AuthController extends InitController
         return jsonResponse(200, 'done.');
     }
     
-    // public function checkResetCode(Request $request)
-    // {
-    //     $user = Auth::guard('api')->user();
-
-    //     $code = $request->verification_code;
-
-    //     $user = $this->pipeline->setModel('User')
-    //         ->select(['users.*','us.verification_code','us.model_id'])
-    //         ->leftJoin('user_settings as us', function($sql) use($code){
-    //             return $sql->on('users.id','=','us.model_id');
-    //         })
-    //         ->where([
-    //             'us.verification_code' => $code,
-    //             'us.model_name' => 'User'
-    //         ])
-    //         ->where('users.id', $user->id)
-    //         ->first();
-            
-    //     if (!$user) {
-    //         return jsonResponse(404, 'not found.');
-    //     }
-
-    //     return jsonResponse(200, 'user found.');
-    // }
-
-
     public function verify(Request $request)
     {
         $data = $request->only(['phone', 'verification_code']);

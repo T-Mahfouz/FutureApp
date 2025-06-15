@@ -21,7 +21,7 @@ class AuthResource extends JsonResource
                 'id' => $this->city_id,
                 'name' => $this->city->name
             ],
-            'image' => getFullImagePath($this, 'uploads/users'),
+            'image' => getFullImagePath($this),
             'access_token' => $this->when($this->access_token, $this->access_token)
         ];
     }

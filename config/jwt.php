@@ -100,8 +100,8 @@ return [
     | Notice: If you set this to null you should remove 'exp' element from 'required_claims' list.
     |
     */
-
-    'ttl' => env('JWT_TTL', 60),
+    
+    'ttl' => env('JWT_TTL', 1440), # 1440 minutes => 1 day
 
     /*
     |--------------------------------------------------------------------------
@@ -147,7 +147,7 @@ return [
     'required_claims' => [
         'iss',
         'iat',
-        'exp',
+        // 'exp',
         'nbf',
         'sub',
         'jti',

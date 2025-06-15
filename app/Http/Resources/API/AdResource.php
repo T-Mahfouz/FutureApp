@@ -19,19 +19,15 @@ class AdResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'location' => $this->location,
-            'city_id' => $this->city_id,
-            'city_name' => $this->whenLoaded('city', function () {
-                return $this->city->name;
+            'city' => $this->whenLoaded('city', function () {
+                return [
+                    'id' => $this->city_id,
+                    'name' => $this->city->name];
             }),
             'image' => $this->whenLoaded('image', function () {
-                return [
-                    'id' => $this->image->id,
-                    'path' => $this->image->path,
-                    'url' => url($this->image->path),
-                ];
+                return getFullImagePath($this);
             }),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
         ];
     }
 }

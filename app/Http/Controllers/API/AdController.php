@@ -6,49 +6,54 @@ use App\Http\Resources\API\AdResource;
 use App\Models\Ad;
 use App\Models\City;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
-class AdController extends Controller
+class AdController extends InitController
 {
-    /**
-     * Get all ads for a specific city
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function getByCityId(Request $request): JsonResponse
+    public function __construct()
     {
-        // Validate the request
-        $request->validate([
-            'city_id' => 'required|exists:cities,id',
-        ]);
+        parent::__construct();
 
-        // Get ads for the specified city
-        $ads = Ad::where('city_id', $request->city_id)
-            ->with('image')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Return the ads as a resource collection
-        return response()->json([
-            'success' => true,
-            'data' => AdResource::collection($ads),
-        ]);
+        $this->pipeline->setModel('Ad');
     }
-
+    
     /**
      * Get all ads for the current user's city
      * 
      * @param Request $request
      * @return JsonResponse
      */
+    public function getByCityId(Request $request): JsonResponse
+    {
+        $cityId = $this->user->city_id;
+        $location = $request->query('location');
+
+        $query = $this->pipeline->where('city_id', $cityId);
+
+        if ($location) {
+           $query = $query->where('location', $location);
+        }
+
+        $ads = $query->with('image')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $data = AdResource::collection($ads);
+
+        return jsonResponse(200, 'done.', $data);
+    }
+
+    /**
+     * Get all ads for a specific city
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getCityAds(Request $request): JsonResponse
     {
-        // Get city_id from request (assuming it's sent from the client)
-        // In a real app, this might come from the authenticated user's profile
         $cityId = $request->header('X-City-ID') ?? $request->query('city_id');
-        
+        $location = $request->query('location');
+
         if (!$cityId) {
             return response()->json([
                 'success' => false,
@@ -56,24 +61,56 @@ class AdController extends Controller
             ], 400);
         }
 
+        $this->pipeline->setModel('City');
+
         // Check if city exists
-        if (!City::find($cityId)) {
+        if (!$this->pipeline->find($cityId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'City not found',
             ], 404);
         }
 
-        // Get ads for the city
-        $ads = Ad::where('city_id', $cityId)
-            ->with('image')
+        $this->pipeline->setModel('Ad');
+
+        $query = $this->pipeline->where('city_id', $cityId);
+
+        if ($location) {
+           $query = $query->where('location', $location);
+        }
+
+        $ads = $query->with('image')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Return the ads as a resource collection
-        return response()->json([
-            'success' => true,
-            'data' => AdResource::collection($ads),
-        ]);
+        $data = AdResource::collection($ads);
+
+        return jsonResponse(200, 'done.', $data);
+    }
+
+    /**
+     * Get ads by user's city and location type
+     * Returns: id, image, link
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAdsByLocation(Request $request): JsonResponse
+    {
+        $location = $request->query('location');
+        
+        if (!$location) {
+            return jsonResponse(400, 'Location parameter is required.');
+        }
+
+        $ads = $this->pipeline->where('city_id', $this->user->city_id)
+            ->where('location', $location)
+            ->with('image')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $data = AdResource::collection($ads);
+
+        return jsonResponse(200, 'done.', $data);
     }
 }

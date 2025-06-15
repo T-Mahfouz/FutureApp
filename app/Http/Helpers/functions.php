@@ -19,13 +19,6 @@ if (!function_exists('jsonResponse')) {
             'message' => $message,
             'data' => $data,
         ], $code);
-
-        // return response()->json(
-        //     $data = [],
-        //     int $status = 200,
-        //     array $headers = [],
-        //     int $options = 0
-        // ):
     }
 }
 
@@ -108,7 +101,7 @@ if (!function_exists('resizeImage')) {
                 $maxHeight, 
                 $minDimension
             );
-
+            
             $newWidth = $newDimensionsArray['width'];
             $newHeight = $newDimensionsArray['height'];
 
@@ -135,7 +128,6 @@ if (!function_exists('resizeImage')) {
                     throw new Exception("Failed to create directory: {$destination}");
                 }
             }
-            
             // Resize and save the image
             $img->resize($newWidth, $newHeight)->save($finalPath, $quality);
 
@@ -150,6 +142,23 @@ if (!function_exists('resizeImage')) {
     }
 }
 
+if (!function_exists('deleteImage')) {
+    function deleteImage(int $imageId): void
+    {
+        try {
+            $media = Media::find($imageId);
+            if ($media) {
+                // Delete file from storage
+                Storage::disk('public')->delete($media->path);
+                
+                // Delete media record
+                $media->delete();
+            }
+        } catch (\Exception $e) {
+            Log::error('Deleing Image failed => ', [$e->getMessage()]);
+        }
+    }
+}
 
 if (!function_exists('insertToMedia')) {
     function insertToMedia($path)
@@ -207,8 +216,13 @@ if (!function_exists('imagesSizes')) {
 }
 
 if (!function_exists('getFullImagePath')) {
-    function getFullImagePath($model, $folder = 'uploads') {
-        return $model->image_id ? $model->image->realPath($folder) : null;
+    function getFullImagePath($model, $folder = 'storage') {
+
+        $imagePath = $model->image->path ?? $model->path;
+
+        $path = $folder . DIRECTORY_SEPARATOR . $imagePath;
+        
+        return ($model->image_id || $model->path ) ? url($path)  : null;
     }
 }
 
@@ -224,6 +238,9 @@ if (!function_exists('getImagePath')) {
 
 if (!function_exists('getUser')) {
     function getUser($guard = 'api') {
+        if (Auth::guest()) {
+            return null;
+        }
         return Auth::guard($guard)->user();
     }
 }

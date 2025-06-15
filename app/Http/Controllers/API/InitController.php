@@ -16,6 +16,10 @@ class InitController extends Controller
     
     public function __construct($guard = 'api')
     {
+        parent::__construct();
+        
+        $this->user = getUser();
+        
         $this->pipeline = new Pipeline();
     }
 }

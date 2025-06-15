@@ -14,6 +14,11 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
+
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Artisan;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -142,4 +147,34 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
+});
+
+
+Route::get('cache/clear-all', function (Request $request) {
+    try {
+        // Clear application cache
+        Cache::flush();
+        
+        // Clear config cache
+        Artisan::call('config:clear');
+        
+        // Clear route cache
+        Artisan::call('route:clear');
+        
+        // Clear view cache
+        Artisan::call('view:clear');
+        
+        // Clear compiled classes
+        Artisan::call('clear-compiled');
+        
+        // If using Redis, clear Redis cache as well
+        if (config('cache.default') === 'redis') {
+            Redis::flushall();
+        }
+        
+        return jsonResponse(200, 'All cache cleared successfully.');
+        
+    } catch (\Exception $e) {
+        return jsonResponse(500, 'Failed to clear cache: ' . $e->getMessage());
+    }
 });
