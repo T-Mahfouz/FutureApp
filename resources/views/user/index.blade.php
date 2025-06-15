@@ -31,6 +31,8 @@
 				<thead>
 				<tr>
 					<th class="font-weight-semi-bold border-top-0 py-2">#</th>
+					<!-- NEW: Profile Image column -->
+					<th class="font-weight-semi-bold border-top-0 py-2">Image</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">Name</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">Email</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">Phone</th>
@@ -43,30 +45,39 @@
 				@forelse($users as $user)
 				<tr>
 					<td class="py-3">{{ $user->id }}</td>
+					<!-- NEW: Profile Image column content -->
+					<td class="py-3">
+						@if($user->image)
+							<img src="{{ asset('storage/' . $user->image->path) }}" alt="{{ $user->name }}" class="rounded-circle" width="40" height="40">
+						@else
+							<span class="avatar-placeholder bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+								{{ substr($user->name, 0, 1) }}
+							</span>
+						@endif
+					</td>
 					<td class="align-middle py-3">
-						<div class="d-flex align-items-center">
-							<div class="position-relative mr-2">
-								<span class="indicator indicator-lg indicator-bordered-reverse indicator-top-left indicator-success rounded-circle"></span>
-								<!--img class="avatar rounded-circle" src="#" alt="{{ $user->name }}"-->
-								<span class="avatar-placeholder mr-md-2">{{ substr($user->name, 0, 1) }}</span>
-							</div>
-							{{ $user->name }}
-						</div>
+						<strong>{{ $user->name }}</strong>
 					</td>
 					<td class="py-3">{{ $user->email }}</td>
 					<td class="py-3">{{ $user->phone ?? '---' }}</td>
-					<td class="py-3">{{ $user->city->name ?? '---' }}</td>
+					<td class="py-3">
+						@if($user->city)
+							<span class="badge badge-primary">{{ $user->city->name }}</span>
+						@else
+							<span class="text-muted">---</span>
+						@endif
+					</td>
 					<td class="py-3">{{ $user->created_at->diffForHumans() }}</td>
 					<td class="py-3">
 						<div class="position-relative">
-							<a class="link-dark d-inline-block" href="{{ route('user.edit', $user) }}">
+							<a class="link-dark d-inline-block mr-2" href="{{ route('user.edit', $user) }}" title="Edit User">
 								<i class="gd-pencil icon-text"></i>
 							</a>
 							@if($user->id != auth()->user()->id)
-							<a class="link-dark d-inline-block" href="#" onclick="if(confirm('Delete this record?')){document.getElementById('delete-entity-{{ $user->id }}').submit();return false;}">
-								<i class="gd-trash icon-text"></i>
+							<a class="link-dark d-inline-block" href="#" onclick="if(confirm('Delete this user? This action cannot be undone.')){document.getElementById('delete-entity-{{ $user->id }}').submit();return false;}" title="Delete User">
+								<i class="gd-trash icon-text text-danger"></i>
 							</a>
-							<form id="delete-entity-{{ $user->id }}" action="{{ route('user.destroy', $user) }}" method="POST">
+							<form id="delete-entity-{{ $user->id }}" action="{{ route('user.destroy', $user) }}" method="POST" style="display: none;">
 								<input type="hidden" name="_method" value="DELETE">
 								@csrf
 							</form>
@@ -76,8 +87,9 @@
 				</tr>
 				@empty
 				<tr>
-					<td colspan="7" class="align-center">
-						<strong>No records found</strong><br>
+					<td colspan="8" class="text-center py-4"> <!-- NEW: Updated colspan to 8 -->
+						<strong>No users found</strong><br>
+						<a href="{{ route('user.create') }}" class="btn btn-primary btn-sm mt-2">Create First User</a>
 					</td>
 				</tr>
 				@endforelse
