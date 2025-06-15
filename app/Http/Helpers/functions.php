@@ -19,13 +19,6 @@ if (!function_exists('jsonResponse')) {
             'message' => $message,
             'data' => $data,
         ], $code);
-
-        // return response()->json(
-        //     $data = [],
-        //     int $status = 200,
-        //     array $headers = [],
-        //     int $options = 0
-        // ):
     }
 }
 
@@ -149,6 +142,23 @@ if (!function_exists('resizeImage')) {
     }
 }
 
+if (!function_exists('deleteImage')) {
+    function deleteImage(int $imageId): void
+    {
+        try {
+            $media = Media::find($imageId);
+            if ($media) {
+                // Delete file from storage
+                Storage::disk('public')->delete($media->path);
+                
+                // Delete media record
+                $media->delete();
+            }
+        } catch (\Exception $e) {
+            Log::error('Deleing Image failed => ', [$e->getMessage()]);
+        }
+    }
+}
 
 if (!function_exists('insertToMedia')) {
     function insertToMedia($path)
@@ -207,8 +217,12 @@ if (!function_exists('imagesSizes')) {
 
 if (!function_exists('getFullImagePath')) {
     function getFullImagePath($model, $folder = 'storage') {
-        $path = $folder . DIRECTORY_SEPARATOR . $model->image->path;
-        return $model->image_id ? url($path)  : null;
+
+        $imagePath = $model->image->path ?? $model->path;
+
+        $path = $folder . DIRECTORY_SEPARATOR . $imagePath;
+        
+        return ($model->image_id || $model->path ) ? url($path)  : null;
     }
 }
 

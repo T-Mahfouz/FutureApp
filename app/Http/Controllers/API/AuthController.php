@@ -48,7 +48,7 @@ class AuthController extends InitController
 
                 $image = $request->file('image');
 
-                $media = resizeImage($image, $this->storagePath);
+                $media = resizeImage($image, $this->storagePath, 'all_images'.DIRECTORY_SEPARATOR.'users');
             
                 $imageId = $media->id ?? null;
                 
