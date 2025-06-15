@@ -46,7 +46,7 @@
 						<label for="target_type">Target Type</label>
 						<select class="form-control{{ $errors->has('target_type') ? ' is-invalid' : '' }}" id="target_type" name="target_type" required>
 							<option value="">Select Target Type</option>
-							<option value="broadcast" {{ old('target_type') == 'broadcast' ? 'selected' : '' }}>Broadcast (All Users)</option>
+							<option value="all" {{ old('target_type') == 'all' ? 'selected' : '' }}>All Users</option>
 							<option value="cities" {{ old('target_type') == 'cities' ? 'selected' : '' }}>Specific Cities</option>
 							<option value="service" {{ old('target_type') == 'service' ? 'selected' : '' }}>Related to Service</option>
 							<option value="news" {{ old('target_type') == 'news' ? 'selected' : '' }}>Related to News</option>
@@ -108,7 +108,9 @@
 						<select class="form-control{{ $errors->has('news_id') ? ' is-invalid' : '' }}" id="news_id" name="news_id">
 							<option value="">Select News</option>
 							@foreach($news as $newsItem)
-								<option value="{{ $newsItem->id }}" {{ old('news_id') == $newsItem->id ? 'selected' : '' }}>{{ $newsItem->name }}</option>
+								<option value="{{ $newsItem->id }}" {{ old('news_id') == $newsItem->id ? 'selected' : '' }}>
+									{{ $newsItem->name }} ({{ $newsItem->city->name ?? 'No City' }})
+								</option>
 							@endforeach
 						</select>
 						@if($errors->has('news_id'))

@@ -13,6 +13,14 @@ class Ad extends Model
     {
         return $this->belongsTo(City::class);
     }
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
 
     public function image()
     {

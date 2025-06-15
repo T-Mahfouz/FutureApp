@@ -116,7 +116,8 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
     Route::delete('/ads/{id}', [AdController::class, 'destroy'])->name('ad.destroy');
 
-    // Notifications
+    # Notifications
+    /* 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');
     Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notification.create');
     Route::post('/notifications/create', [NotificationController::class, 'store'])->name('notification.store');
@@ -126,7 +127,20 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notification.destroy');
+    */
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');
+    Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notification.create');
+    Route::post('/notifications/create', [NotificationController::class, 'store'])->name('notification.store');
+    Route::get('/notifications/send-firebase', [NotificationController::class, 'sendFirebase'])->name('notification.send-firebase');
+    Route::post('/notifications/send-firebase', [NotificationController::class, 'processFirebase'])->name('notification.send-firebase-post');
+    Route::post('/notifications/bulk-action', [NotificationController::class, 'bulkAction'])->name('notification.bulk-action');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notification.show');
+    Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
+    Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notification.destroy');
 
+    
     // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('setting.index');
     Route::get('/settings/create', [SettingController::class, 'create'])->name('setting.create');
