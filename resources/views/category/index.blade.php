@@ -46,6 +46,15 @@
 									</div>
 								</div>
 							</div>
+							<div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+								<label for="description_search" class="form-label">Search by Description</label>
+								<div class="position-relative">
+									<input type="text" class="form-control pr-5" id="description_search" name="description_search" value="{{ request('description_search') }}" placeholder="Search descriptions...">
+									<div class="position-absolute" style="right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+										<i class="gd-search text-muted"></i>
+									</div>
+								</div>
+							</div>
 							<div class="col-lg-2 col-md-4 col-sm-6 mb-3">
 								<label for="city_id" class="form-label">City</label>
 								<select class="form-control" id="city_id" name="city_id">
@@ -131,6 +140,9 @@
 										@if(request('search'))
 											<span class="badge badge-primary mr-1 mb-1">Search: "{{ request('search') }}"</span>
 										@endif
+										@if(request('description_search'))
+											<span class="badge badge-primary mr-1 mb-1">Description: "{{ request('description_search') }}"</span>
+										@endif
 										@if(request('city_id'))
 											<span class="badge badge-info mr-1 mb-1">City: {{ $cities->find(request('city_id'))->name ?? 'Unknown' }}</span>
 										@endif
@@ -202,6 +214,7 @@
 							@endif
 						</a>
 					</th>
+					<th class="font-weight-semi-bold border-top-0 py-2">Description</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">City</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">Parent</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">
@@ -262,6 +275,13 @@
 						</div>
 					</td>
 					<td class="py-3">
+						@if($category->description)
+							<span class="text-muted" title="{{ $category->description }}">{{ Str::limit($category->description, 50) }}</span>
+						@else
+							<span class="text-muted font-italic">No description</span>
+						@endif
+					</td>
+					<td class="py-3">
 						<span class="badge badge-primary">{{ $category->city->name ?? 'N/A' }}</span>
 					</td>
 					<td class="py-3">
@@ -309,8 +329,8 @@
 				</tr>
 				@empty
 				<tr>
-					<td colspan="9" class="text-center py-4">
-						@if(request()->hasAny(['search', 'city_id', 'parent_filter', 'active', 'date_from', 'date_to']))
+					<td colspan="10" class="text-center py-4"> <!-- NEW: Updated colspan to 10 -->
+						@if(request()->hasAny(['search', 'description_search', 'city_id', 'parent_filter', 'active', 'date_from', 'date_to']))
 							<strong>No categories found matching your filters</strong><br>
 							<small class="text-muted">Try adjusting your search criteria</small><br>
 							<a href="{{ route('category.index') }}" class="btn btn-outline-primary btn-sm mt-2">Clear Filters</a>

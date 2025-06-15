@@ -9,6 +9,7 @@ use App\Models\City;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class AdController extends Controller
 {
@@ -57,6 +58,17 @@ class AdController extends Controller
         // Filter by location if provided
         if ($request->has('location') && $request->location) {
             $query->where('location', $request->location);
+        }
+        
+        if ($request->has('status') && $request->status) {
+            if ($request->status === 'active') {
+                $query->where(function($q) {
+                    $q->whereNull('expiration_date')
+                      ->orWhere('expiration_date', '>', now());
+                });
+            } elseif ($request->status === 'expired') {
+                $query->where('expiration_date', '<=', now());
+            }
         }
         
         // Search by name
@@ -124,7 +136,9 @@ class AdController extends Controller
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
-            'location' => 'required|in:home,category_profile,service_profile',
+            'location' => 'required|in:home,category_profile,service_profile,all_locations',
+            'link' => 'nullable|url|max:500', 
+            'expiration_date' => 'nullable|date|after:today',
             'city_id' => ['required', 'exists:cities,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
                 if (!in_array($value, $accessibleCityIds)) {
                     $fail('You do not have permission to create/edit ads in this city.');
@@ -155,6 +169,8 @@ class AdController extends Controller
         // Update ad fields
         $ad->name = $request->input('name');
         $ad->location = $request->input('location');
+        $ad->link = $request->input('link');
+        $ad->expiration_date = $request->input('expiration_date') ? Carbon::parse($request->input('expiration_date')) : null;
         $ad->city_id = $request->input('city_id');
         $ad->image_id = $imageId;
 
@@ -262,14 +278,13 @@ class AdController extends Controller
 
         return redirect()->route('ad.index')->with('status', $message);
     }
-
-    // Additional method to get location options (for consistency)
     public function getLocationOptions()
     {
         return [
             'home' => 'Home Page',
             'category_profile' => 'Category Profile',
-            'service_profile' => 'Service Profile'
+            'service_profile' => 'Service Profile',
+            'all_locations' => 'All Locations'
         ];
     }
 }

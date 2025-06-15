@@ -70,6 +70,17 @@
 										@endif
 									</div>
 								</div>
+								
+								<div class="form-row">
+									<div class="form-group col-12">
+										<label for="description">Description</label>
+										<textarea class="form-control{{ $errors->has('description') ? ' is-invalid' : '' }}" id="description" name="description" rows="4" placeholder="Enter category description (optional)">{{ old('description', $category->description) }}</textarea>
+										@if($errors->has('description'))
+											<div class="invalid-feedback">{{ $errors->first('description') }}</div>
+										@endif
+										<small class="form-text text-muted">A brief description of what this category includes (max 1000 characters)</small>
+									</div>
+								</div>
 
 								<div class="form-row">
 									<div class="form-group col-12 col-md-6">
@@ -215,6 +226,7 @@
 								<ul class="mb-0 small">
 									<li>Choose a clear, descriptive name for your category</li>
 									<li>Select the appropriate city where this category will be used</li>
+									<li>Add a description to help users understand what this category includes</li>
 									<li>If this is a sub-category, select the parent category</li>
 									<li>Upload a representative image to help users identify the category</li>
 									<li>Keep the category active unless you want to hide it from users</li>

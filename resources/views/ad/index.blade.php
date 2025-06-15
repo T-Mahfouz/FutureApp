@@ -27,36 +27,112 @@
 
 		<!-- Filters -->
 		<div class="card mb-3">
-			<div class="card-body">
-				<form method="GET" action="{{ route('ad.index') }}" class="row">
-					<div class="col-md-3">
-						<select name="city_id" class="form-control">
-							<option value="">All Cities</option>
-							@foreach($cities as $city)
-								<option value="{{ $city->id }}" {{ request('city_id') == $city->id ? 'selected' : '' }}>
-									{{ $city->name }}
-								</option>
-							@endforeach
-						</select>
-					</div>
-					<div class="col-md-3">
-						<select name="location" class="form-control">
-							<option value="">All Locations</option>
-							<option value="home" {{ request('location') == 'home' ? 'selected' : '' }}>Home</option>
-							<option value="category_profile" {{ request('location') == 'category_profile' ? 'selected' : '' }}>Category Profile</option>
-							<option value="service_profile" {{ request('location') == 'service_profile' ? 'selected' : '' }}>Service Profile</option>
-						</select>
-					</div>
-					<div class="col-md-4">
-						<input type="text" name="search" class="form-control" placeholder="Search by name..." value="{{ request('search') }}">
-					</div>
-					<div class="col-md-2">
-						<button type="submit" class="btn btn-primary btn-block">Filter</button>
-					</div>
-				</form>
+			<div class="card-header d-flex justify-content-between align-items-center">
+				<h6 class="mb-0">Search & Filters</h6>
+				<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#filterSection" aria-expanded="true" aria-controls="filterSection">
+					<i class="gd-angle-down"></i> Collapse
+				</button>
+			</div>
+			<div class="collapse show" id="filterSection">
+				<div class="card-body">
+					<form method="GET" action="{{ route('ad.index') }}">
+						<div class="row">
+							<div class="col-md-2">
+								<label for="city_id" class="form-label">City</label>
+								<select name="city_id" class="form-control" id="city_id">
+									<option value="">All Cities</option>
+									@foreach($cities as $city)
+										<option value="{{ $city->id }}" {{ request('city_id') == $city->id ? 'selected' : '' }}>
+											{{ $city->name }}
+										</option>
+									@endforeach
+								</select>
+							</div>
+							<div class="col-md-2">
+								<label for="location" class="form-label">Location</label>
+								<select name="location" class="form-control" id="location">
+									<option value="">All Locations</option>
+									<option value="home" {{ request('location') == 'home' ? 'selected' : '' }}>Home</option>
+									<option value="category_profile" {{ request('location') == 'category_profile' ? 'selected' : '' }}>Category Profile</option>
+									<option value="service_profile" {{ request('location') == 'service_profile' ? 'selected' : '' }}>Service Profile</option>
+									<option value="all_locations" {{ request('location') == 'all_locations' ? 'selected' : '' }}>All Locations</option> <!-- NEW: Add all_locations filter -->
+								</select>
+							</div>
+							<!-- NEW: Status filter -->
+							<div class="col-md-2">
+								<label for="status" class="form-label">Status</label>
+								<select name="status" class="form-control" id="status">
+									<option value="">All Status</option>
+									<option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+									<option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Expired</option>
+								</select>
+							</div>
+							<div class="col-md-4">
+								<label for="search" class="form-label">Search by Name</label>
+								<input type="text" name="search" class="form-control" id="search" placeholder="Search by name..." value="{{ request('search') }}">
+							</div>
+							<div class="col-md-2 d-flex align-items-end">
+								<button type="submit" class="btn btn-primary btn-block">Filter</button>
+							</div>
+						</div>
+
+						<!-- Active Filters Display -->
+						@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+						<div class="row mt-3">
+							<div class="col-12">
+								<div class="border-top pt-3">
+									<small class="text-muted">Active filters:</small>
+									<div class="mt-2">
+										@if(request('search'))
+											<span class="badge badge-primary mr-1 mb-1">Search: "{{ request('search') }}"</span>
+										@endif
+										@if(request('city_id'))
+											<span class="badge badge-info mr-1 mb-1">City: {{ $cities->find(request('city_id'))->name ?? 'Unknown' }}</span>
+										@endif
+										@if(request('location'))
+											@php
+												$locationLabels = [
+													'home' => 'Home',
+													'category_profile' => 'Category Profile',
+													'service_profile' => 'Service Profile',
+													'all_locations' => 'All Locations'
+												];
+											@endphp
+											<span class="badge badge-success mr-1 mb-1">Location: {{ $locationLabels[request('location')] ?? request('location') }}</span>
+										@endif
+										@if(request('status'))
+											<span class="badge badge-{{ request('status') == 'active' ? 'success' : 'danger' }} mr-1 mb-1">{{ ucfirst(request('status')) }}</span>
+										@endif
+										<a href="{{ route('ad.index') }}" class="btn btn-sm btn-outline-secondary ml-2">Clear All</a>
+									</div>
+								</div>
+							</div>
+						</div>
+						@endif
+					</form>
+				</div>
 			</div>
 		</div>
 		<!-- End Filters -->
+
+		<!-- Results Info -->
+		<div class="d-flex justify-content-between align-items-center mb-3">
+			<div>
+				<small class="text-muted">
+					Showing {{ $ads->firstItem() ?? 0 }} to {{ $ads->lastItem() ?? 0 }} of {{ $ads->total() }} results
+					@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+						<span class="badge badge-info ml-1">Filtered</span>
+					@endif
+				</small>
+			</div>
+			@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+			<div>
+				<a href="{{ route('ad.index') }}" class="btn btn-sm btn-outline-secondary">
+					<i class="gd-close"></i> Clear All Filters
+				</a>
+			</div>
+			@endif
+		</div>
 
 		<!-- Bulk Actions -->
 		<form id="bulk-form" method="POST" action="{{ route('ad.bulk-action') }}">
@@ -87,6 +163,12 @@
 						<th class="font-weight-semi-bold border-top-0 py-2">Name</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Location</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">City</th>
+						<!-- NEW: Link column -->
+						<th class="font-weight-semi-bold border-top-0 py-2">Link</th>
+						<!-- NEW: Expiration Date column -->
+						<th class="font-weight-semi-bold border-top-0 py-2">Expiration Date</th>
+						<!-- NEW: Status column -->
+						<th class="font-weight-semi-bold border-top-0 py-2">Status</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Created Date</th>
 						<th class="font-weight-semi-bold border-top-0 py-2">Actions</th>
 					</tr>
@@ -119,15 +201,58 @@
 								$locationLabels = [
 									'home' => 'Home',
 									'category_profile' => 'Category Profile',
-									'service_profile' => 'Service Profile'
+									'service_profile' => 'Service Profile',
+									'all_locations' => 'All Locations' // NEW: Add all_locations label
+								];
+								$locationColors = [
+									'home' => 'primary',
+									'category_profile' => 'success',
+									'service_profile' => 'info',
+									'all_locations' => 'warning' // NEW: Add color for all_locations
 								];
 							@endphp
-							<span class="badge badge-{{ $ad->location == 'home' ? 'primary' : ($ad->location == 'category_profile' ? 'success' : 'info') }}">
+							<span class="badge badge-{{ $locationColors[$ad->location] ?? 'secondary' }}">
 								{{ $locationLabels[$ad->location] ?? $ad->location }}
 							</span>
 						</td>
 						<td class="py-3">
 							<span class="badge badge-info">{{ $ad->city->name }}</span>
+						</td>
+						<!-- NEW: Link column content -->
+						<td class="py-3">
+							@if($ad->link)
+								<a href="{{ $ad->link }}" target="_blank" class="btn btn-sm btn-outline-primary" title="{{ $ad->link }}">
+									<i class="gd-link"></i> Link
+								</a>
+							@else
+								<span class="text-muted font-italic">No link</span>
+							@endif
+						</td>
+						<!-- NEW: Expiration Date column content -->
+						<td class="py-3">
+							@if($ad->expiration_date)
+								<div class="text-center">
+									@if($ad->expiration_date->isPast())
+										<span class="badge badge-danger">Expired</span>
+										<br><small class="text-muted">{{ $ad->expiration_date->format('M d, Y') }}</small>
+										<br><small class="text-muted">{{ $ad->expiration_date->diffForHumans() ?? '---' }}</small>
+									@else
+										<span class="badge badge-warning">Expires Soon</span>
+										<br><small class="text-muted">{{ $ad->expiration_date->format('M d, Y') }}</small>
+										<br><small class="text-muted">{{ $ad->expiration_date->diffForHumans() ?? '---' }}</small>
+									@endif
+								</div>
+							@else
+								<span class="text-muted font-italic">No expiration</span>
+							@endif
+						</td>
+						<!-- NEW: Status column content -->
+						<td class="py-3">
+							@if($ad->expiration_date && $ad->expiration_date->isPast())
+								<span class="badge badge-danger">Expired</span>
+							@else
+								<span class="badge badge-success">Active</span>
+							@endif
 						</td>
 						<td class="py-3">{{ $ad->created_at ? $ad->created_at->diffForHumans() : '---' }}</td>
 						<td class="py-3">
@@ -146,9 +271,15 @@
 					</tr>
 					@empty
 					<tr>
-						<td colspan="8" class="text-center">
-							<strong>No ads found</strong><br>
-							<a href="{{ route('ad.create') }}" class="btn btn-primary btn-sm mt-2">Create First Ad</a>
+						<td colspan="11" class="text-center"> <!-- NEW: Updated colspan to 11 -->
+							@if(request()->hasAny(['search', 'city_id', 'location', 'status']))
+								<strong>No ads found matching your filters</strong><br>
+								<small class="text-muted">Try adjusting your search criteria</small><br>
+								<a href="{{ route('ad.index') }}" class="btn btn-outline-primary btn-sm mt-2">Clear Filters</a>
+							@else
+								<strong>No ads found</strong><br>
+								<a href="{{ route('ad.create') }}" class="btn btn-primary btn-sm mt-2">Create First Ad</a>
+							@endif
 						</td>
 					</tr>
 					@endforelse

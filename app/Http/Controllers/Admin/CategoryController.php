@@ -78,6 +78,10 @@ class CategoryController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
+        if ($request->filled('description_search')) {
+            $query->where('description', 'like', '%' . $request->description_search . '%');
+        }
+
         // Filter by city (only show cities admin has access to)
         if ($request->filled('city_id')) {
             $accessibleCityIds = $this->getAccessibleCityIds();
@@ -205,6 +209,7 @@ class CategoryController extends Controller
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'city_id' => ['required', 'exists:cities,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
                 if (!in_array($value, $accessibleCityIds)) {
                     $fail('You do not have permission to create/edit categories in this city.');
@@ -242,6 +247,7 @@ class CategoryController extends Controller
 
         // Update category fields
         $category->name = $request->input('name');
+        $category->description = $request->input('description');
         $category->city_id = $request->input('city_id');
         $category->parent_id = $request->input('parent_id');
         $category->image_id = $imageId;

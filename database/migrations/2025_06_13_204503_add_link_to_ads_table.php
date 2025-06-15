@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('ads', function (Blueprint $table) {
             $table->string('link')->after('image_id')->nullable();
+            $table->timestamp('expiration_date')->nullable()->after('link');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('ads', function (Blueprint $table) {
-            $table->dropColumn('link');
+            $table->dropColumn(['link', 'expiration_date']);
         });
     }
 };

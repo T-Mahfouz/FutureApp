@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\City;
+use Illuminate\Support\Facades\Storage; // NEW: Add Storage facade
 
 class UserController extends Controller
 {
@@ -13,7 +14,7 @@ class UserController extends Controller
 	// Show all users
     public function index()
     {
-		$users = User::with('city')->paginate(25);
+		$users = User::with(['city', 'image'])->paginate(25); // NEW: Include image relationship
 		return view('user.index', compact('users'));
     }
 	
@@ -43,6 +44,7 @@ class UserController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'city_id' => 'nullable|exists:cities,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // NEW: Add image validation
         ];
 
         // Email validation - unique except current user
@@ -69,12 +71,26 @@ class UserController extends Controller
         }
 
         $request->validate($rules);
+        
+        $imageId = $user->image_id;
+        if($request->hasFile('image')){
+            $image = $request->file('image');
+            
+            $media = resizeImage($image, $this->storagePath);
+            
+            $imageId = $media->id ?? null;
+            
+            if($imageId && $user->image_id && $user->image){
+                Storage::disk('public')->delete($user->image->path);
+            }
+        }
 
         // Update user fields
         $user->name = $request->input('name');
         $user->email = $request->input('email');
         $user->phone = $request->input('phone');
         $user->city_id = $request->input('city_id');
+        $user->image_id = $imageId; // NEW: Add image_id field
 
         // Hash password if provided
         if($request->input('password')){
@@ -94,6 +110,12 @@ class UserController extends Controller
     {
         if($user->id == auth()->user()->id){
             return abort(401);
+        }
+
+        // NEW: Delete user image if exists
+        if($user->image){
+            Storage::disk('public')->delete($user->image->path);
+            $user->image->delete();
         }
 		
         $user->delete();

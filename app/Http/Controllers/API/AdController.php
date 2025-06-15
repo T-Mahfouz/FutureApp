@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Resources\API\AdResource;
 use App\Models\Ad;
 use App\Models\City;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -29,6 +30,11 @@ class AdController extends InitController
         $location = $request->query('location');
 
         $query = $this->pipeline->where('city_id', $cityId);
+
+        $query = $query->where(function($q) {
+            $q->whereNull('expiration_date')
+              ->orWhere('expiration_date', '>', now());
+        });
 
         if ($location) {
            $query = $query->where('location', $location);
@@ -75,6 +81,11 @@ class AdController extends InitController
 
         $query = $this->pipeline->where('city_id', $cityId);
 
+        $query = $query->where(function($q) {
+            $q->whereNull('expiration_date')
+              ->orWhere('expiration_date', '>', now());
+        });
+
         if ($location) {
            $query = $query->where('location', $location);
         }
@@ -105,6 +116,10 @@ class AdController extends InitController
 
         $ads = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('location', $location)
+            ->where(function($q) {
+                $q->whereNull('expiration_date')
+                  ->orWhere('expiration_date', '>', now());
+            })
             ->with('image')
             ->orderBy('created_at', 'desc')
             ->get();
