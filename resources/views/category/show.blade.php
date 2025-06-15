@@ -53,6 +53,13 @@
 			</div>
 		</div>
 
+		@if($category->description)
+		<div class="alert alert-info mb-4">
+			<h6 class="mb-2"><i class="gd-info-alt mr-2"></i>Description</h6>
+			<p class="mb-0">{{ $category->description }}</p>
+		</div>
+		@endif
+		
 		<!-- Category Info -->
 		<div class="row mb-4">
 			<div class="col-md-6">
@@ -87,6 +94,13 @@
 								@endif
 							</div>
 						</div>
+						@if($category->description)
+						<hr>
+						<div class="row">
+							<div class="col-sm-4"><strong>Description:</strong></div>
+							<div class="col-sm-8">{{ $category->description }}</div>
+						</div>
+						@endif
 						<hr>
 						<div class="row">
 							<div class="col-sm-4"><strong>Created:</strong></div>
@@ -164,6 +178,9 @@
 							@endif
 							<div class="flex-grow-1">
 								<strong>{{ $child->name }}</strong>
+								@if($child->description)
+									<br><small class="text-muted">{{ Str::limit($child->description, 60) }}</small>
+								@endif
 								<br><small class="text-muted">{{ $child->services()->count() }} services</small>
 								@if(!$child->active)
 									<br><span class="badge badge-danger badge-sm">Inactive</span>

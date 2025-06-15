@@ -19,6 +19,8 @@ class AdResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'location' => $this->location,
+            'link' => $this->link,
+            'expiration_date' => $this->expiration_date != null ? $this->expiration_date->format('M d, Y g:i A') : '',
             'city' => $this->whenLoaded('city', function () {
                 return [
                     'id' => $this->city_id,

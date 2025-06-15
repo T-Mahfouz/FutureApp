@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ad extends Model
 {
     protected $guarded = ['id'];
+    protected $casts = ['expiration_date' => 'datetime'];
 
     public function city()
     {
