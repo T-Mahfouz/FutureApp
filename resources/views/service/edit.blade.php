@@ -6,6 +6,8 @@
 
 @include('components.notification')
 
+<div id="feedback-container"></div>
+
 <div class="card mb-3 mb-md-4">
 	<div class="card-body">
 		<!-- Breadcrumb -->
@@ -319,9 +321,17 @@
 							<label>Current Additional Images</label>
 							<div class="mt-2 d-flex flex-wrap">
 								@foreach($service->images as $image)
-									<div class="mr-2 mb-2">
+									{{-- <div class="mr-2 mb-2">
 										<img src="{{ asset('storage/' . $image->path) }}" alt="Service Image" 
 											 class="img-thumbnail" style="max-width: 100px;">
+									</div> --}}
+									<div class="col-md-3 mb-3" id="image-container-{{$image->pivot->id}}">
+										<div class="card">
+											<img src="{{ asset('storage/' . $image->path) }}" alt="Additional Image" class="card-img-top" style="height: 150px; object-fit: cover;">
+											<div class="card-body p-2">
+												<div style="cursor: pointer;" class="btn btn-sm btn-danger" onclick="removeImage(event, {{$image->pivot->id}})">Remove</div>
+											</div>
+										</div>
 									</div>
 								@endforeach
 							</div>
@@ -538,4 +548,78 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+
+<script>
+
+
+const alertContainer = document.getElementById('feedback-container');
+    
+// Remove existing alerts
+alertContainer.innerHTML = '';
+
+function removeImage(event, id) {
+    
+    // feedback-container
+    event.preventDefault();
+    
+    let devID = `image-container-${id}`;
+
+    if (!confirm('Remove this image?')) {
+        return;
+    }
+
+    const url = `{{ route('services.image.destroy', ['id' => ':id']) }}`.replace(':id', id);
+    const csrf = $('meta[name="csrf-token"]').attr('content');
+
+    let alertClass = '';
+    let iconClass = '';
+    let title = '';
+    let message = '';
+
+    
+
+    $.ajax({
+        method: "DELETE",
+        url: url,
+        headers: {
+            'X-CSRF-TOKEN': csrf
+        }
+    })
+    .done(function( data ) {
+
+        alertClass = 'alert-success';
+        iconClass = 'gd-info-circle';
+        title = 'Success!';
+
+        message = data.message
+        
+        $("#"+devID).remove();
+        
+    }).fail(function( err ) {
+        alertClass = 'alert-danger';
+        iconClass = 'gd-alert';
+        title = 'Error!';
+        message = err;
+
+    }).always(function() {
+        
+
+        let alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="${iconClass} mr-2"></i>
+                <strong>${title}</strong> ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+        alertContainer.innerHTML = alertHtml;
+        
+        window.scrollTo(0, 0);
+
+    });
+}
+
+</script>
 @endsection

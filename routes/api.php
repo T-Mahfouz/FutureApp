@@ -77,7 +77,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function() {
     Route::prefix('ads')->group(function () {
         Route::get('/city', [AdController::class, 'getCityAds']);
         Route::get('/user-city', [AdController::class, 'getByCityId']);
-        Route::get('/location', [AdController::class, 'getAdsByLocation']); // Get ads by location type
+        Route::get('/filter', [AdController::class, 'getAdsWithFilter']); // Get ads by location type
     });
 
     // Categories Routes

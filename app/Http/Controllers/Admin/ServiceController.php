@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ServiceImage;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\City;
@@ -533,6 +534,49 @@ class ServiceController extends Controller
     }
 
 
+    public function destroyImage($id)
+    {
+        \DB::beginTransaction();
+        try {
+            $image = ServiceImage::find($id);
+            if (!$image) {
+                return response()->json([
+                    'message' => 'Image not found'
+                ], 404);
+            }
+            
+            // Get the news to check city access
+            $news = $image->news;
+            if ($news) {
+                $accessibleCityIds = $this->getAccessibleCityIds();
+                if (!in_array($news->city_id, $accessibleCityIds)) {
+                    return response()->json([
+                        'message' => 'You do not have permission to delete this image.'
+                    ], 403);
+                }
+            }
+            
+            $media = Media::find($image->image_id);
+
+            if ($media) {
+                Storage::disk('public')->delete($media->path);
+                $media->delete(); // Also delete the media record
+            }
+            
+            $image->delete();
+            \DB::commit();
+            
+            return response()->json([
+                'message' => 'Image has been deleted successfully'
+            ]);
+            
+        } catch (\Exception $ex) {
+            \DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete image: ' . $ex->getMessage()
+            ], 500);
+        }
+    }
 
 
     /* ================== Requested Services Management =========================== */

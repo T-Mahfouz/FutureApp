@@ -26,6 +26,16 @@ class AdResource extends JsonResource
                     'id' => $this->city_id,
                     'name' => $this->city->name];
             }),
+            'category' => $this->whenLoaded('category', function () {
+                return [
+                    'id' => $this->category_id,
+                    'name' => $this->category->name];
+            }),
+            'service' => $this->whenLoaded('service', function () {
+                return [
+                    'id' => $this->service_id,
+                    'name' => $this->service->name];
+            }),
             'image' => $this->whenLoaded('image', function () {
                 return getFullImagePath($this);
             }),

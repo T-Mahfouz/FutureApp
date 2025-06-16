@@ -188,7 +188,7 @@
 							<div>
 								<strong>Assigned Category:</strong>
 								<p class="mb-0">{{ $ad->category->name }}</p>
-								<small class="text-muted">{{ $ad->category->city->name ?? 'No City' }}</small>
+								<small class="text-muted">{{ $ad->category->city->name ?? 'No Category' }}</small>
 								@if($ad->category->description)
 									<p class="text-muted mt-1 mb-0">{{ Str::limit($ad->category->description, 100) }}</p>
 								@endif
@@ -208,7 +208,7 @@
 							<div>
 								<strong>Assigned Service:</strong>
 								<p class="mb-0">{{ $ad->service->name }}</p>
-								<small class="text-muted">{{ $ad->service->city->name ?? 'No City' }}</small>
+								<small class="text-muted">{{ $ad->service->city->name ?? 'No Service' }}</small>
 								@if($ad->service->brief_description)
 									<p class="text-muted mt-1 mb-0">{{ Str::limit($ad->service->brief_description, 100) }}</p>
 								@endif
@@ -289,13 +289,13 @@
 							</a>
 							@endif
 
-							@if($ad->category)
+							@if($ad->category_id)
 							<a href="{{ route('category.show', $ad->category) }}" class="btn btn-outline-success btn-sm">
 								<i class="gd-bookmark"></i> View Category
 							</a>
 							@endif
 
-							@if($ad->service)
+							@if($ad->service_id)
 							<a href="{{ route('service.show', $ad->service) }}" class="btn btn-outline-primary btn-sm">
 								<i class="gd-layers"></i> View Service
 							</a>

@@ -90,7 +90,8 @@ class Service extends Model
 
     public function images()
     {
-        return $this->belongsToMany(Media::class, 'service_images', 'service_id', 'image_id');
+        return $this->belongsToMany(Media::class, 'service_images', 'service_id', 'image_id')
+            ->withPivot('id');
     }
 
     public function phones()

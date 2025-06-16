@@ -92,6 +92,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/services/{service}/reject', [ServiceController::class, 'reject'])->name('service.reject');
     Route::post('/services/bulk-action', [ServiceController::class, 'bulkAction'])->name('service.bulk-action');
 
+    Route::delete('/services/images/{id}', [ServiceController::class, 'destroyImage'])->name('services.image.destroy');
     
     // News
     Route::get('/news', [NewsController::class, 'index'])->name('news.index');
