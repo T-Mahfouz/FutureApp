@@ -85,6 +85,14 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/services/bulk-destroy', [ServiceController::class, 'bulkDestroy'])->name('service.bulk-destroy');
     Route::post('/services/bulk-toggle-status', [ServiceController::class, 'bulkToggleStatus'])->name('service.bulk-toggle-status');
     
+
+    // Service request management routes
+    Route::get('/services/requests', [ServiceController::class, 'requests'])->name('service.requests');
+    Route::post('/services/{service}/approve', [ServiceController::class, 'approve'])->name('service.approve');
+    Route::post('/services/{service}/reject', [ServiceController::class, 'reject'])->name('service.reject');
+    Route::post('/services/bulk-action', [ServiceController::class, 'bulkAction'])->name('service.bulk-action');
+
+    
     // News
     Route::get('/news', [NewsController::class, 'index'])->name('news.index');
     Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
@@ -105,18 +113,6 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('category.toggle-status');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
-
-    // Ads
-    /* 
-    Route::get('/ads', [AdController::class, 'index'])->name('ad.index');
-    Route::post('/ads/bulk-action', [AdController::class, 'bulkAction'])->name('ad.bulk-action');
-    Route::get('/ads/create', [AdController::class, 'create'])->name('ad.create');
-    Route::post('/ads/create', [AdController::class, 'store'])->name('ad.store');
-    Route::get('/ads/{ad}', [AdController::class, 'show'])->name('ad.show');
-    Route::get('/ads/{ad}/edit', [AdController::class, 'edit'])->name('ad.edit');
-    Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
-    Route::delete('/ads/{id}', [AdController::class, 'destroy'])->name('ad.destroy'); 
-    */
     
     Route::get('/ads', [AdController::class, 'index'])->name('ad.index');
     Route::post('/ads/bulk-action', [AdController::class, 'bulkAction'])->name('ad.bulk-action');

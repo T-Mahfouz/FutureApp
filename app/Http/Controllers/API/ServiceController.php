@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\API\UserServiceRequest;
 use App\Http\Resources\API\ServiceResource;
 use App\Models\Service;
 use App\Traits\ApiResponse;
@@ -32,6 +33,13 @@ class ServiceController extends InitController
         
         $services = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
+            ->where(function($query) { 
+                $query->where('is_request', false) // Admin created services (no approval needed)
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('is_request', true)
+                                ->whereNotNull('approved_at'); // User requests must be approved
+                    });
+            })
             ->with('image')
             ->orderBy('created_at', 'desc')
             ->limit($limit)
@@ -53,6 +61,13 @@ class ServiceController extends InitController
     {
         $services = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
+            ->where(function($query) { 
+                $query->where('is_request', false) // Admin created services (no approval needed)
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('is_request', true)
+                                ->whereNotNull('approved_at'); // User requests must be approved
+                    });
+            })
             ->with(['image', 'categories'])
             ->orderBy('arrangement_order', 'asc')
             ->orderBy('name', 'asc')
@@ -75,6 +90,13 @@ class ServiceController extends InitController
     {
         $services = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
+            ->where(function($query) { 
+                $query->where('is_request', false) // Admin created services (no approval needed)
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('is_request', true)
+                                ->whereNotNull('approved_at'); // User requests must be approved
+                    });
+            })
             ->whereHas('categories', function($query) use ($categoryId) {
                 $query->where('category_id', $categoryId);
             })
@@ -100,6 +122,13 @@ class ServiceController extends InitController
     {
         $service = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
+            ->where(function($query) { 
+                $query->where('is_request', false) // Admin created services (no approval needed)
+                    ->orWhere(function($subQuery) {
+                        $subQuery->where('is_request', true)
+                                ->whereNotNull('approved_at'); // User requests must be approved
+                    });
+            })
             ->with(['image', 'images', 'categories', 'phones', 'rates'])
             ->find($id);
         
@@ -112,5 +141,99 @@ class ServiceController extends InitController
 
         return jsonResponse(200, 'done.', $data);
         // return $this->successResponse($data, 'Data retrieved successfully');
+    }
+
+
+    /* ================= Requested Services ====================== */
+
+    /**
+     * User can request a new service to be added
+     * Service will be pending until admin approval
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function requestService(UserServiceRequest $request): JsonResponse // NEW
+    {
+        $data = [
+            'city_id' => $this->user->city_id,
+            'user_id' => $this->user->id,
+            'name' => $request->name,
+            'address' => $request->address,
+            'brief_description' => $request->brief_description,
+            'description' => $request->description,
+            'lat' => $request->lat ?? null,
+            'lon' => $request->lon ?? null,
+            'website' => $request->website ?? null,
+            'facebook' => $request->facebook ?? null,
+            'whatsapp' => $request->whatsapp ?? null,
+            'instagram' => $request->instagram ?? null,
+            'telegram' => $request->telegram ?? null,
+            'youtube' => $request->youtube ?? null,
+            'video_link' => $request->video_link ?? null,
+            'image_id' => $request->image_id ?? null,
+            'valid' => false,
+            'is_request' => true,
+            'requested_at' => now(),
+        ];
+
+        if($request->hasFile('image')){
+            $image = $request->file('image');
+
+            $media = resizeImage($image, $this->storagePath);
+            
+            $data['image_id'] = $media->id ?? null;
+        }
+
+        $service = $this->pipeline->create($data);
+
+        if($request->hasFile('additional_images')){
+            foreach($request->file('additional_images') as $image){
+                
+                $media = resizeImage($image, $this->storagePath);
+            
+                $imageId = $media->id ?? null;
+                
+                if ($imageId) {
+                    $service->images()->attach($media->id);
+                }
+            }
+        }
+        
+        // Attach categories
+        $service->categories()->attach($request->category_ids);
+
+        //  Add phone numbers if provided
+        if (isset($request->phones)) {
+            foreach ($request->phones as $phone) {
+                $service->phones()->create(['phone' => $phone]);
+            }
+        }
+
+        return jsonResponse(201, 'Service request submitted successfully. It will be reviewed by admin.', [
+            'service_id' => $service->id,
+            'status' => 'pending_review'
+        ]);
+    }
+
+
+
+    /**
+     * Get current user's service requests and their status
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getMyServiceRequests(Request $request): JsonResponse // NEW
+    {
+        $services = $this->pipeline->where('user_id', $this->user->id)
+            ->where('is_request', true)
+            ->with(['image', 'categories'])
+            ->orderBy('requested_at', 'desc')
+            ->get();
+        
+        $data = ServiceResource::collection($services);
+
+        return jsonResponse(200, 'done.', $data);
     }
 }

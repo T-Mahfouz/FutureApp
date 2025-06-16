@@ -95,6 +95,26 @@ class ServiceController extends Controller
             }
         }
 
+        if ($request->filled('request_status')) {
+            switch ($request->request_status) {
+                case 'pending':
+                    $query->pending();
+                    break;
+                case 'approved':
+                    $query->approved();
+                    break;
+                case 'rejected':
+                    $query->rejected();
+                    break;
+                case 'user_requests':
+                    $query->userRequests();
+                    break;
+                case 'admin_created':
+                    $query->adminCreated();
+                    break;
+            }
+        }
+
         // Filter by creation date
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -272,6 +292,16 @@ class ServiceController extends Controller
             'arrangement_order' => $request->arrangement_order ?? 1,
             'parent_id' => $request->parent_id,
             'image_id' => $imageId,
+
+
+            'user_id' => $request->user_id ?? $service->user_id,
+            'is_request' => $request->has('is_request') ? true : $service->is_request,
+            'requested_at' => $request->requested_at ?? $service->requested_at,
+            'approved_at' => $service->approved_at,
+            'approved_by' => $service->approved_by,
+            'rejected_at' => $service->rejected_at,
+            'rejected_by' => $service->rejected_by,
+            'rejection_reason' => $service->rejection_reason,
         ]);
 
         $service->save();
@@ -500,5 +530,189 @@ class ServiceController extends Controller
         return redirect()
             ->route('service.index')
             ->with('status', "{$updatedCount} services have been {$status} successfully");
+    }
+
+
+
+
+    /* ================== Requested Services Management =========================== */
+
+    /**
+     * NEW: Show pending service requests
+     */
+    public function requests(Request $request)
+    {
+        $query = Service::with(['city', 'image', 'categories', 'phones', 'user'])
+                       ->withCount(['rates', 'favorites', 'images'])
+                       ->userRequests(); // Only user-submitted requests
+
+        // Apply city restriction
+        $query = $this->applyCityRestriction($query);
+
+        // Filter by request status
+        if ($request->filled('request_status')) {
+            switch ($request->request_status) {
+                case 'pending':
+                    $query->pending();
+                    break;
+                case 'approved':
+                    $query->approved();
+                    break;
+                case 'rejected':
+                    $query->rejected();
+                    break;
+            }
+        } else {
+            // Default to pending requests
+            $query->pending();
+        }
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%')
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', '%' . $search . '%')
+                               ->orWhere('email', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        // Filter by city
+        if ($request->filled('city_id')) {
+            $accessibleCityIds = $this->getAccessibleCityIds();
+            if (in_array($request->city_id, $accessibleCityIds)) {
+                $query->where('city_id', $request->city_id);
+            }
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('requested_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('requested_at', '<=', $request->date_to);
+        }
+
+        $services = $query->latest('requested_at')->paginate(25)->appends($request->query());
+        
+        // Get filter options
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
+
+        return view('service.requests', compact('services', 'cities'));
+    }
+
+    /**
+     * NEW: Approve a service request
+     */
+    public function approve(Service $service)
+    {
+        // Check if admin has access to this service's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($service->city_id, $accessibleCityIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to approve this service.'
+            ], 403);
+        }
+
+        // Check if it's a pending request
+        if (!$service->isPending()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This service is not pending approval.'
+            ], 400);
+        }
+
+        $service->approve(Auth::guard('admin')->id());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Service has been approved successfully.',
+            'status' => 'approved'
+        ]);
+    }
+
+    /**
+     * NEW: Reject a service request
+     */
+    public function reject(Request $request, Service $service)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:1000'
+        ]);
+
+        // Check if admin has access to this service's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($service->city_id, $accessibleCityIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to reject this service.'
+            ], 403);
+        }
+
+        // Check if it's a pending request
+        if (!$service->isPending()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This service is not pending approval.'
+            ], 400);
+        }
+
+        $service->reject($request->rejection_reason, Auth::guard('admin')->id());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Service has been rejected.',
+            'status' => 'rejected'
+        ]);
+    }
+
+    /**
+     * NEW: Bulk approve/reject service requests
+     */
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:approve,reject',
+            'service_ids' => 'required|array',
+            'service_ids.*' => 'exists:services,id',
+            'rejection_reason' => 'required_if:action,reject|string|max:1000'
+        ]);
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $adminId = Auth::guard('admin')->id();
+        
+        // Only process services in accessible cities and pending status
+        $services = Service::whereIn('id', $request->service_ids)
+            ->whereIn('city_id', $accessibleCityIds)
+            ->pending()
+            ->get();
+
+        $processedCount = 0;
+        
+        foreach ($services as $service) {
+            if ($request->action === 'approve') {
+                $service->approve($adminId);
+            } else {
+                $service->reject($request->rejection_reason, $adminId);
+            }
+            $processedCount++;
+        }
+
+        $action = $request->action === 'approve' ? 'approved' : 'rejected';
+        $totalRequested = count($request->service_ids);
+        
+        if ($processedCount < $totalRequested) {
+            $skipped = $totalRequested - $processedCount;
+            $message = "{$processedCount} services {$action} successfully. {$skipped} services were skipped (no permission or not pending).";
+        } else {
+            $message = "{$processedCount} services {$action} successfully.";
+        }
+
+        return redirect()->route('service.requests')->with('status', $message);
     }
 }

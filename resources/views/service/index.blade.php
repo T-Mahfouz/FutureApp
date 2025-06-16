@@ -80,6 +80,17 @@
 									<option value="ad" {{ request('service_type') == 'ad' ? 'selected' : '' }}>Advertisements</option>
 								</select>
 							</div>
+							<div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+								<label for="request_status" class="form-label">Request Status</label>
+								<select class="form-control" id="request_status" name="request_status">
+									<option value="">All Requests</option>
+									<option value="pending" {{ request('request_status') == 'pending' ? 'selected' : '' }}>Pending</option>
+									<option value="approved" {{ request('request_status') == 'approved' ? 'selected' : '' }}>Approved</option>
+									<option value="rejected" {{ request('request_status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+									<option value="user_requests" {{ request('request_status') == 'user_requests' ? 'selected' : '' }}>All User Requests</option>
+									<option value="admin_created" {{ request('request_status') == 'admin_created' ? 'selected' : '' }}>Admin Created</option>
+								</select>
+							</div>
 						</div>
 
 						<!-- Second Row - Advanced Filters -->
@@ -215,6 +226,7 @@
 							@endif
 						</a>
 					</th>
+					<th class="font-weight-semi-bold border-top-0 py-2">Owner</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">Status</th>
 					<th class="font-weight-semi-bold border-top-0 py-2">
 						<a href="{{ route('service.index', array_merge(request()->query(), ['sort_by' => 'created_at', 'sort_direction' => request('sort_direction') == 'asc' ? 'desc' : 'asc'])) }}" class="text-dark text-decoration-none">
@@ -276,6 +288,11 @@
 						@else
 							<span class="text-muted">No ratings</span>
 						@endif
+					</td>
+					<td class="py-3">
+						<span class="badge badge-{{ $service->is_request ? 'success' : 'danger' }}">
+							{{ $service->is_request ? "User => $service->status" : 'Admin' }}
+						</span>
 					</td>
 					<td class="py-3">
 						<span class="badge badge-{{ $service->valid ? 'success' : 'danger' }}">

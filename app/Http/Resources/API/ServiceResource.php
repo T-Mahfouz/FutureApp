@@ -52,6 +52,13 @@ class ServiceResource extends JsonResource
             'ratings_count' => $this->whenLoaded('rates', function() {
                 return $this->rates->count();
             }),
+
+            'is_request' => (bool)$this->is_request,
+            'status' => $this->status, // uses the status attribute from model
+            'requested_at' => $this->requested_at,
+            'approved_at' => $this->approved_at,
+            'rejection_reason' => $this->rejection_reason,
+            
             'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }
