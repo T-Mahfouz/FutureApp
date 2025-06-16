@@ -1,11 +1,483 @@
 {
 	"info": {
-		"_postman_id": "3681d4ed-9168-454b-bb49-4010d77be96b",
-		"name": "Future App",
+		"_postman_id": "dd5130ae-d4e3-4cc4-a422-81f0eec6440b",
+		"name": "New Future",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "2966772"
 	},
 	"item": [
+		{
+			"name": "Migrations",
+			"item": [
+				{
+					"name": "Migrate Cities",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/cities",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"cities"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Parent Categories",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/categories/parents",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"categories",
+								"parents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Child Categories",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/categories/children",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"categories",
+								"children"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Users",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/users",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Parent Institutes",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/institutes/parents",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"institutes",
+								"parents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Child Institutes",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/institutes/children",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"institutes",
+								"children"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Institutes Images",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/institute-images",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"institute-images"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Admins",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{migration_route}}/admins",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"admins"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate About Us",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{migration_route}}/settings/aboutus",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"settings",
+								"aboutus"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Ads",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/ads",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"ads"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Migrate Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{migration_route}}/notifications",
+							"host": [
+								"{{migration_route}}"
+							],
+							"path": [
+								"notifications"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Images",
+			"item": [
+				{
+					"name": "Clean Up - Get Paths",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/paths",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"paths"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clean Up - Debug Storage",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/debug-storage",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"debug-storage"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clean Up - Storage Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/storage-info",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"storage-info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clean Up - Analyze",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/analyze",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"analyze"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clean Up - Move Unreferenced",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/move-unreferenced",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"move-unreferenced"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clean Up - Restore",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/analyze",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"analyze"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clean Up - Delete Unreferenced",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/delete-unreferenced",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"delete-unreferenced"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resize - Analyze Images",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/analyze-images",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"analyze-images"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resize - Resize All",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{localhost}}/media-cleanup/resize-all",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"media-cleanup",
+								"resize-all"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Auth",
 			"item": [
@@ -1036,6 +1508,206 @@
 							"path": [
 								"services",
 								"369"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request a Service",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": " Cairo Medical Center",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": " 123 Tahrir Square, Cairo, Egypt",
+									"type": "text"
+								},
+								{
+									"key": "brief_description",
+									"value": " Modern medical center providing comprehensive healthcare services",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": " Cairo Medical Center is a state-of-the-art facility offering a wide range of medical services including general medicine, cardiology, orthopedics, and emergency care. Our experienced doctors and modern equipment ensure the best healthcare for our patients.",
+									"type": "text"
+								},
+								{
+									"key": "lat",
+									"value": " 30.0444",
+									"type": "text"
+								},
+								{
+									"key": "lon",
+									"value": " 31.2357",
+									"type": "text"
+								},
+								{
+									"key": "website",
+									"value": " https://cairomediccenter.com",
+									"type": "text"
+								},
+								{
+									"key": "facebook",
+									"value": " https://facebook.com/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "whatsapp",
+									"value": " +201234567890",
+									"type": "text"
+								},
+								{
+									"key": "instagram",
+									"value": " https://instagram.com/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "telegram",
+									"value": " https://t.me/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "youtube",
+									"value": " https://youtube.com/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "video_link",
+									"value": " https://youtube.com/watch?v=example",
+									"type": "text"
+								},
+								{
+									"key": "category_ids[]",
+									"value": "69",
+									"type": "text"
+								},
+								{
+									"key": "category_ids[]",
+									"value": "120",
+									"type": "text"
+								},
+								{
+									"key": "category_ids[]",
+									"value": "185",
+									"type": "text"
+								},
+								{
+									"key": "phones[]",
+									"value": " +201234567890",
+									"type": "text"
+								},
+								{
+									"key": "phones[]",
+									"value": " +201234567891",
+									"type": "text"
+								},
+								{
+									"key": "phones[]",
+									"value": " +201234567892",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"src": "/D:/wamp64/www/future-new/public/storage/all_images/122705363c6d18b9f79c.png"
+								},
+								{
+									"key": "additional_images[]",
+									"type": "file",
+									"src": "/D:/wamp64/www/future-new/public/storage/all_images/196134966b1725e9021d.png"
+								},
+								{
+									"key": "additional_images[]",
+									"type": "file",
+									"src": "/D:/wamp64/www/future-new/public/storage/all_images/289869762ff75fae43ef.jpeg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{localhost}}/services/request",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"services",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "My Requested Services",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{localhost}}/services/my-requests",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"services",
+								"my-requests"
 							]
 						}
 					},
@@ -2171,6 +2843,11 @@
 		{
 			"key": "migration_route",
 			"value": "http://localhost/future-new/public/migration",
+			"type": "string"
+		},
+		{
+			"key": "server",
+			"value": "https://lightcyan-gerbil-554941.hostingersite.com/public/api",
 			"type": "string"
 		}
 	]
