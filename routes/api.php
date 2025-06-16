@@ -99,8 +99,8 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function() {
         Route::get('/city', [ServiceController::class, 'getCityServices']); // Bonus: All city services
         Route::get('/category/{categoryId}', [ServiceController::class, 'getServicesByCategory']); // Bonus: By category
         
-        Route::post('/request', [ServiceController::class, 'requestService']);
-        Route::get('/my-requests', [ServiceController::class, 'getMyServiceRequests']);
+        Route::post('/request', [ServiceController::class, 'requestService'])->name('service.request');
+        Route::get('/my-requests', [ServiceController::class, 'getMyServiceRequests'])->name('service.request.show');
         
         Route::get('/{id}', [ServiceController::class, 'getServiceById'])->name('service.show'); // Bonus: Single service
     });
