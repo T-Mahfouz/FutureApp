@@ -77,34 +77,38 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function() {
     Route::prefix('ads')->group(function () {
         Route::get('/city', [AdController::class, 'getCityAds']);
         Route::get('/user-city', [AdController::class, 'getByCityId']);
-        Route::get('/location', [AdController::class, 'getAdsByLocation']); // New: Get ads by location type
+        Route::get('/location', [AdController::class, 'getAdsByLocation']); // Get ads by location type
     });
 
     // Categories Routes
     Route::prefix('categories')->group(function () {
-        Route::get('/active', [CategoryController::class, 'getActiveCategories']); // New: Get active categories
+        Route::get('/active', [CategoryController::class, 'getActiveCategories']); // Get active categories
         Route::get('/active/with-children', [CategoryController::class, 'getActiveCategoriesWithChildren']); // Bonus: With children
     });
 
     // News Routes
     Route::prefix('news')->group(function () {
-        Route::get('/city', [NewsController::class, 'getCityNews']); // New: Get city news
+        Route::get('/city', [NewsController::class, 'getCityNews']); // Get city news
         Route::get('/city/paginated', [NewsController::class, 'getCityNewsPaginated']); // Bonus: Paginated
         Route::get('/{id}', [NewsController::class, 'getNewsById']); // Bonus: Single news
     });
 
     // Services Routes
     Route::prefix('services')->group(function () {
-        Route::get('/latest', [ServiceController::class, 'getLatestServices']); // New: Latest services
+        Route::get('/latest', [ServiceController::class, 'getLatestServices']); // Latest services
         Route::get('/city', [ServiceController::class, 'getCityServices']); // Bonus: All city services
         Route::get('/category/{categoryId}', [ServiceController::class, 'getServicesByCategory']); // Bonus: By category
+        
+        Route::post('/request', [ServiceController::class, 'requestService'])->name('service.request');
+        Route::get('/my-requests', [ServiceController::class, 'getMyServiceRequests'])->name('service.request.show');
+        
         Route::get('/{id}', [ServiceController::class, 'getServiceById'])->name('service.show'); // Bonus: Single service
     });
 
     // Favorites Routes
     Route::prefix('favorites')->middleware('throttle:favorites')->group(function () {
-        Route::post('/add', [FavoriteController::class, 'addToFavorites']); // New: Add to favorites
-        Route::post('/remove', [FavoriteController::class, 'removeFromFavorites']); // New: Remove from favorites
+        Route::post('/add', [FavoriteController::class, 'addToFavorites']); // Add to favorites
+        Route::post('/remove', [FavoriteController::class, 'removeFromFavorites']); // Remove from favorites
         Route::post('/toggle', [FavoriteController::class, 'toggleFavorite']); // Bonus: Toggle favorite
         Route::get('/my-favorites', [FavoriteController::class, 'getUserFavorites']); // Bonus: Get user favorites
         Route::get('/check/{serviceId}', [FavoriteController::class, 'checkFavoriteStatus']); // Bonus: Check status

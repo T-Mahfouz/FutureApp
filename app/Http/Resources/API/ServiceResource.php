@@ -32,10 +32,8 @@ class ServiceResource extends JsonResource
             'image' => $this->whenLoaded('image', function () {
                 return getFullImagePath($this);
             }),
-            'images' => $this->whenLoaded('images', function() {
-                return $this->images->map(function($image) {
-                    return getFullImagePath($image);
-                });
+            'images' => $this->images->map(function($image) {
+                return getFullImagePath($image);
             }),
             'categories' => CategoryResource::collection($this->whenLoaded('categories')),
             'phones' => $this->whenLoaded('phones', function() {
@@ -52,6 +50,13 @@ class ServiceResource extends JsonResource
             'ratings_count' => $this->whenLoaded('rates', function() {
                 return $this->rates->count();
             }),
+
+            'is_request' => (bool)$this->is_request,
+            'status' => $this->status, // uses the status attribute from model
+            'requested_at' => $this->requested_at,
+            'approved_at' => $this->approved_at,
+            'rejection_reason' => $this->rejection_reason,
+
             'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }

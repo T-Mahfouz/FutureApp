@@ -28,8 +28,7 @@
 					<h3 class="mb-0">{{ $ad->name }}</h3>
 					<small class="text-muted">Created {{ $ad->created_at ? $ad->created_at->format('M d, Y') : 'Unknown' }}</small>
 					<br>
-					<!-- NEW: Status badge -->
-					@if($ad->expiration_date && $ad->expiration_date->isPast())
+					@if($ad->isExpired())
 						<span class="badge badge-danger">Expired</span>
 					@else
 						<span class="badge badge-success">Active</span>
@@ -66,13 +65,13 @@
 												'home' => 'Home',
 												'category_profile' => 'Category Profile',
 												'service_profile' => 'Service Profile',
-												'all_locations' => 'All Locations' // NEW: Add all_locations label
+												'all_locations' => 'All Locations'
 											];
 											$locationColors = [
 												'home' => 'primary',
 												'category_profile' => 'success',
 												'service_profile' => 'info',
-												'all_locations' => 'warning' // NEW: Add color for all_locations
+												'all_locations' => 'warning'
 											];
 										@endphp
 										<span class="badge badge-{{ $locationColors[$ad->location] ?? 'secondary' }}">
@@ -88,7 +87,28 @@
 									</p>
 								</div>
 
-								<!-- NEW: Link information -->
+								<div class="mb-3">
+									<strong>Category:</strong>
+									<p class="mb-0">
+										@if($ad->category)
+											<span class="badge badge-success">{{ $ad->category->name }}</span>
+										@else
+											<span class="text-muted font-italic">No category assigned</span>
+										@endif
+									</p>
+								</div>
+
+								<div class="mb-3">
+									<strong>Service:</strong>
+									<p class="mb-0">
+										@if($ad->service)
+											<span class="badge badge-primary">{{ $ad->service->name }}</span>
+										@else
+											<span class="text-muted font-italic">No service assigned</span>
+										@endif
+									</p>
+								</div>
+
 								<div class="mb-3">
 									<strong>Link:</strong>
 									<p class="mb-0">
@@ -102,7 +122,6 @@
 									</p>
 								</div>
 
-								<!-- NEW: Expiration Date information -->
 								<div class="mb-3">
 									<strong>Expiration Date:</strong>
 									<p class="mb-0">
@@ -127,11 +146,10 @@
 									</p>
 								</div>
 
-								<!-- NEW: Status information -->
 								<div class="mb-3">
 									<strong>Status:</strong>
 									<p class="mb-0">
-										@if($ad->expiration_date && $ad->expiration_date->isPast())
+										@if($ad->isExpired())
 											<span class="badge badge-danger">Expired</span>
 											<br><small class="text-muted">This ad is no longer active</small>
 										@else
@@ -150,6 +168,56 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- Assignment Details -->
+				@if($ad->category || $ad->service)
+				<div class="card mt-4">
+					<div class="card-header">
+						<h5 class="mb-0">Assignment Details</h5>
+					</div>
+					<div class="card-body">
+						@if($ad->category)
+						<div class="d-flex align-items-center mb-3">
+							@if($ad->category->image)
+								<img src="{{ asset('storage/' . $ad->category->image->path) }}" alt="{{ $ad->category->name }}" class="rounded mr-3" width="50" height="50">
+							@else
+								<span class="avatar-placeholder bg-success text-white rounded d-inline-flex align-items-center justify-content-center mr-3" style="width: 50px; height: 50px;">
+									<i class="gd-bookmark"></i>
+								</span>
+							@endif
+							<div>
+								<strong>Assigned Category:</strong>
+								<p class="mb-0">{{ $ad->category->name }}</p>
+								<small class="text-muted">{{ $ad->category->city->name ?? 'No City' }}</small>
+								@if($ad->category->description)
+									<p class="text-muted mt-1 mb-0">{{ Str::limit($ad->category->description, 100) }}</p>
+								@endif
+							</div>
+						</div>
+						@endif
+
+						@if($ad->service)
+						<div class="d-flex align-items-center mb-3">
+							@if($ad->service->image)
+								<img src="{{ asset('storage/' . $ad->service->image->path) }}" alt="{{ $ad->service->name }}" class="rounded mr-3" width="50" height="50">
+							@else
+								<span class="avatar-placeholder bg-primary text-white rounded d-inline-flex align-items-center justify-content-center mr-3" style="width: 50px; height: 50px;">
+									<i class="gd-layers"></i>
+								</span>
+							@endif
+							<div>
+								<strong>Assigned Service:</strong>
+								<p class="mb-0">{{ $ad->service->name }}</p>
+								<small class="text-muted">{{ $ad->service->city->name ?? 'No City' }}</small>
+								@if($ad->service->brief_description)
+									<p class="text-muted mt-1 mb-0">{{ Str::limit($ad->service->brief_description, 100) }}</p>
+								@endif
+							</div>
+						</div>
+						@endif
+					</div>
+				</div>
+				@endif
 			</div>
 			
 			<div class="col-md-4">
@@ -161,7 +229,6 @@
 					</div>
 					<div class="card-body text-center">
 						<img src="{{ asset('storage/' . $ad->image->path) }}" alt="{{ $ad->name }}" class="img-fluid rounded" style="max-width: 100%;">
-						<!-- NEW: Show link overlay if ad has link -->
 						@if($ad->link)
 							<div class="mt-2">
 								<small class="text-muted">This ad links to:</small><br>
@@ -174,8 +241,39 @@
 				</div>
 				@endif
 
+				<!-- Assignment Summary -->
+				<div class="card mb-3">
+					<div class="card-header">
+						<h6 class="mb-0">Assignment Summary</h6>
+					</div>
+					<div class="card-body">
+						<div class="text-center">
+							<div class="mb-3">
+								<strong>City:</strong><br>
+								<span class="badge badge-info">{{ $ad->city->name }}</span>
+							</div>
+							<div class="mb-3">
+								<strong>Category:</strong><br>
+								@if($ad->category)
+									<span class="badge badge-success">{{ $ad->category->name }}</span>
+								@else
+									<span class="badge badge-light text-muted">None</span>
+								@endif
+							</div>
+							<div class="mb-3">
+								<strong>Service:</strong><br>
+								@if($ad->service)
+									<span class="badge badge-primary">{{ $ad->service->name }}</span>
+								@else
+									<span class="badge badge-light text-muted">None</span>
+								@endif
+							</div>
+						</div>
+					</div>
+				</div>
+
 				<!-- Quick Actions -->
-				<div class="card">
+				<div class="card mb-3">
 					<div class="card-header">
 						<h5 class="mb-0">Quick Actions</h5>
 					</div>
@@ -185,10 +283,21 @@
 								<i class="gd-pencil"></i> Edit Ad
 							</a>
 							
-							<!-- NEW: Test link button -->
 							@if($ad->link)
 							<a href="{{ $ad->link }}" target="_blank" class="btn btn-outline-info btn-sm">
 								<i class="gd-link"></i> Test Link
+							</a>
+							@endif
+
+							@if($ad->category)
+							<a href="{{ route('category.show', $ad->category) }}" class="btn btn-outline-success btn-sm">
+								<i class="gd-bookmark"></i> View Category
+							</a>
+							@endif
+
+							@if($ad->service)
+							<a href="{{ route('service.show', $ad->service) }}" class="btn btn-outline-primary btn-sm">
+								<i class="gd-layers"></i> View Service
 							</a>
 							@endif
 							
@@ -210,9 +319,9 @@
 					</div>
 				</div>
 
-				<!-- NEW: Expiration Info Card -->
+				<!-- Expiration Info Card -->
 				@if($ad->expiration_date)
-				<div class="card mt-3">
+				<div class="card">
 					<div class="card-header">
 						<h6 class="mb-0">
 							<i class="gd-time mr-2"></i>Expiration Details
@@ -241,7 +350,7 @@
 					</div>
 				</div>
 				@else
-				<div class="card mt-3">
+				<div class="card">
 					<div class="card-header">
 						<h6 class="mb-0">
 							<i class="gd-infinite mr-2"></i>No Expiration
@@ -263,8 +372,18 @@
 		
 		<!-- Navigation -->
 		@php
-			$prevAd = \App\Models\Ad::where('id', '<', $ad->id)->orderBy('id', 'desc')->first();
-			$nextAd = \App\Models\Ad::where('id', '>', $ad->id)->orderBy('id', 'asc')->first();
+			$accessibleCityIds = auth()->guard('admin')->user()->cities()->count() == 0 
+				? \App\Models\City::pluck('id')->toArray()
+				: auth()->guard('admin')->user()->cities()->pluck('cities.id')->toArray();
+			
+			$prevAd = \App\Models\Ad::where('id', '<', $ad->id)
+						->whereIn('city_id', $accessibleCityIds)
+						->orderBy('id', 'desc')
+						->first();
+			$nextAd = \App\Models\Ad::where('id', '>', $ad->id)
+						->whereIn('city_id', $accessibleCityIds)
+						->orderBy('id', 'asc')
+						->first();
 		@endphp
 		
 		@if($prevAd || $nextAd)

@@ -30,6 +30,9 @@
 						<span class="badge badge-{{ $service->valid ? 'success' : 'danger' }} mr-2">
 							{{ $service->valid ? 'Active' : 'Inactive' }}
 						</span>
+						@if($service->is_request)
+							<span class="badge badge-info mr-2">User Request</span>
+						@endif
 						@if($service->is_add)
 							<span class="badge badge-info mr-2">Advertisement</span>
 						@endif
@@ -124,6 +127,100 @@
 				@endif
 			</div>
 		</div>
+
+		@if($service->is_request)
+			<div class="card mb-4">
+				<div class="card-header">
+					<h5 class="mb-0">Request Information</h5>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-6">
+							<strong>Requested By:</strong>
+							<p class="text-muted">
+								@if($service->user)
+									{{ $service->user->name }} ({{ $service->user->email }})
+								@else
+									Unknown User
+								@endif
+							</p>
+						</div>
+						<div class="col-md-6">
+							<strong>Request Date:</strong>
+							<p class="text-muted">
+								{{ $service->requested_at ? $service->requested_at->format('M d, Y \a\t g:i A') : ($service->created_at ? $service->created_at->format('M d, Y \a\t g:i A') : 'N/A') }}
+								<br><small>{{ $service->requested_at ? $service->requested_at->diffForHumans() : ($service->created_at ? $service->created_at->diffForHumans() : '') }}</small>
+							</p>
+						</div>
+					</div>
+
+					@if($service->isApproved())
+					<div class="row">
+						<div class="col-md-6">
+							<strong>Approved By:</strong>
+							<p class="text-muted">
+								{{ $service->approvedBy->name ?? 'Unknown Admin' }}
+							</p>
+						</div>
+						<div class="col-md-6">
+							<strong>Approval Date:</strong>
+							<p class="text-muted">
+								{{ $service->approved_at ? $service->approved_at->format('M d, Y \a\t g:i A') : 'N/A' }}
+								<br><small>{{ $service->approved_at ? $service->approved_at->diffForHumans() : '' }}</small>
+							</p>
+						</div>
+					</div>
+					@endif
+
+					@if($service->isRejected())
+					<div class="row">
+						<div class="col-md-6">
+							<strong>Rejected By:</strong>
+							<p class="text-muted">
+								{{ $service->rejectedBy->name ?? 'Unknown Admin' }}
+							</p>
+						</div>
+						<div class="col-md-6">
+							<strong>Rejection Date:</strong>
+							<p class="text-muted">
+								{{ $service->rejected_at ? $service->rejected_at->format('M d, Y \a\t g:i A') : 'N/A' }}
+								<br><small>{{ $service->rejected_at ? $service->rejected_at->diffForHumans() : '' }}</small>
+							</p>
+						</div>
+					</div>
+					@if($service->rejection_reason)
+					<div class="row">
+						<div class="col-12">
+							<strong>Rejection Reason:</strong>
+							<div class="alert alert-danger mt-2">
+								{{ $service->rejection_reason }}
+							</div>
+						</div>
+					</div>
+					@endif
+					@endif
+
+					<!-- NEW: Action buttons for pending requests -->
+					@if($service->isPending())
+					<div class="row mt-3">
+						<div class="col-12">
+							<div class="alert alert-warning">
+								<strong>This service is pending approval.</strong>
+							</div>
+							<div class="d-flex">
+								<button type="button" class="btn btn-success mr-2" onclick="approveService({{ $service->id }})">
+									<i class="gd-check"></i> Approve Request
+								</button>
+								<button type="button" class="btn btn-danger" onclick="rejectService({{ $service->id }})">
+									<i class="gd-close"></i> Reject Request
+								</button>
+							</div>
+						</div>
+					</div>
+					@endif
+				</div>
+			</div>
+		@endif
 
 		<!-- Contact Information -->
 		<div class="card mb-4">
@@ -345,3 +442,64 @@
 	</div>
 </div>
 @endsection
+
+
+<script>
+function approveService(serviceId) {
+    if(confirm('Are you sure you want to approve this service request?')) {
+
+		let url = `{{ url('') }}/services/${serviceId}/approve`;
+
+		$.ajax({
+			url: url,
+			type: 'POST',
+			headers: {
+				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+			},
+			contentType: 'application/json',
+			dataType: 'json',
+			success: function(data) {
+				if(data.success) {
+					location.reload();
+				} else {
+					alert(data.message || 'Error approving service');
+				}
+			},
+			error: function(xhr, status, error) {
+				alert('Error approving service');
+			}
+		});
+    }
+}
+
+function rejectService(serviceId) {
+    const reason = prompt('Please provide a reason for rejection:');
+
+	let url = `{{ url('') }}/services/${serviceId}/reject`;
+	
+    if(reason && reason.trim()) {
+        $.ajax({
+			url: url,
+			type: 'POST',
+			headers: {
+				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+			},
+			contentType: 'application/json',
+			dataType: 'json',
+			data: JSON.stringify({
+				rejection_reason: reason.trim()
+			}),
+			success: function(data) {
+				if(data.success) {
+					location.reload();
+				} else {
+					alert(data.message || 'Error rejecting service');
+				}
+			},
+			error: function(xhr, status, error) {
+				alert('Error rejecting service');
+			}
+		});
+    }
+}
+</script>

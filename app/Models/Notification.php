@@ -22,4 +22,41 @@ class Notification extends Model
     {
         return $this->belongsTo(News::class);
     }
+
+
+    /**
+     * Many-to-many relationship with cities
+     */
+    public function cities()
+    {
+        return $this->belongsToMany(City::class, 'notification_cities');
+    }
+
+    /**
+     * Get the related content (service or news)
+     */
+    public function getRelatedContentAttribute()
+    {
+        if ($this->service_id && $this->service) {
+            return [
+                'type' => 'service',
+                'item' => $this->service
+            ];
+        } elseif ($this->news_id && $this->news) {
+            return [
+                'type' => 'news',
+                'item' => $this->news
+            ];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Check if notification has both service and news (should not happen)
+     */
+    public function hasBothServiceAndNews()
+    {
+        return $this->service_id && $this->news_id;
+    }
 }

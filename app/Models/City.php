@@ -67,4 +67,9 @@ class City extends Model
     {
         return $this->belongsTo(Media::class, 'image_id');
     }
+
+    public function notifications()
+    {
+        return $this->belongsToMany(Notification::class, 'notification_cities');
+    }
 }

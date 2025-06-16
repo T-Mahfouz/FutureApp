@@ -72,18 +72,41 @@
 				</div>
 				@endif
 
+				<!-- City Selection (Required) -->
+				<div class="form-row">
+					<div class="form-group col-12">
+						<label for="city_ids">Select Cities <span class="text-danger">*</span></label>
+						<select class="form-control{{ $errors->has('city_ids') ? ' is-invalid' : '' }}" id="city_ids" name="city_ids[]" multiple required>
+							@foreach($cities as $city)
+								<option value="{{ $city->id }}" 
+									{{ in_array($city->id, old('city_ids', $notification->cities->pluck('id')->toArray())) ? 'selected' : '' }}>
+									{{ $city->name }}
+								</option>
+							@endforeach
+						</select>
+						@if($errors->has('city_ids'))
+							<div class="invalid-feedback">{{ $errors->first('city_ids') }}</div>
+						@endif
+						@if($errors->has('city_ids.*'))
+							<div class="invalid-feedback">{{ $errors->first('city_ids.*') }}</div>
+						@endif
+						<small class="form-text text-muted">Hold Ctrl/Cmd to select multiple cities. At least one city is required.</small>
+					</div>
+				</div>
+
 				<div class="form-row">
 					<div class="form-group col-12 col-md-6">
-						<label for="target_type">Target Type</label>
-						<select class="form-control{{ $errors->has('target_type') ? ' is-invalid' : '' }}" id="target_type" name="target_type" required>
-							<option value="">Select Target Type</option>
-							<option value="broadcast" {{ old('target_type') == 'broadcast' ? 'selected' : '' }}>Broadcast (All Users)</option>
-							<option value="cities" {{ old('target_type') == 'cities' ? 'selected' : '' }}>Specific Cities</option>
-							<option value="service" {{ old('target_type', $notification->service_id ? 'service' : '') == 'service' ? 'selected' : '' }}>Related to Service</option>
-							<option value="news" {{ old('target_type', $notification->news_id ? 'news' : '') == 'news' ? 'selected' : '' }}>Related to News</option>
+						<label for="content_type">Related Content Type <span class="text-danger">*</span></label>
+						<select class="form-control{{ $errors->has('content_type') ? ' is-invalid' : '' }}" id="content_type" name="content_type" required>
+							<option value="">Select Content Type</option>
+							<option value="service" {{ old('content_type', $notification->service_id ? 'service' : '') == 'service' ? 'selected' : '' }}>Related to Service</option>
+							<option value="news" {{ old('content_type', $notification->news_id ? 'news' : '') == 'news' ? 'selected' : '' }}>Related to News</option>
 						</select>
-						@if($errors->has('target_type'))
-							<div class="invalid-feedback">{{ $errors->first('target_type') }}</div>
+						@if($errors->has('content_type'))
+							<div class="invalid-feedback">{{ $errors->first('content_type') }}</div>
+						@endif
+						@if($errors->has('service_or_news'))
+							<div class="invalid-feedback">{{ $errors->first('service_or_news') }}</div>
 						@endif
 					</div>
 					<div class="form-group col-12 col-md-6">
@@ -94,22 +117,6 @@
 							</label>
 							<small class="form-text text-muted">Check to send real-time notification via Firebase</small>
 						</div>
-					</div>
-				</div>
-
-				<!-- Cities Selection (Hidden by default) -->
-				<div class="form-row" id="cities_selection" style="display: none;">
-					<div class="form-group col-12">
-						<label for="city_ids">Select Cities</label>
-						<select class="form-control{{ $errors->has('city_ids') ? ' is-invalid' : '' }}" id="city_ids" name="city_ids[]" multiple>
-							@foreach($cities as $city)
-								<option value="{{ $city->id }}" {{ in_array($city->id, old('city_ids', [])) ? 'selected' : '' }}>{{ $city->name }}</option>
-							@endforeach
-						</select>
-						@if($errors->has('city_ids'))
-							<div class="invalid-feedback">{{ $errors->first('city_ids') }}</div>
-						@endif
-						<small class="form-text text-muted">Hold Ctrl/Cmd to select multiple cities</small>
 					</div>
 				</div>
 
@@ -159,24 +166,25 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-	const targetTypeSelect = document.getElementById('target_type');
-	const citiesSelection = document.getElementById('cities_selection');
+	const contentTypeSelect = document.getElementById('content_type');
 	const serviceSelection = document.getElementById('service_selection');
 	const newsSelection = document.getElementById('news_selection');
+	const serviceSelect = document.getElementById('service_id');
+	const newsSelect = document.getElementById('news_id');
 
 	function toggleSelections() {
-		const targetType = targetTypeSelect.value;
+		const contentType = contentTypeSelect.value;
 		
 		// Hide all selections first
-		citiesSelection.style.display = 'none';
 		serviceSelection.style.display = 'none';
 		newsSelection.style.display = 'none';
 		
-		// Show relevant selection based on target type
-		switch(targetType) {
-			case 'cities':
-				citiesSelection.style.display = 'block';
-				break;
+		// Clear selections
+		serviceSelect.value = '';
+		newsSelect.value = '';
+		
+		// Show relevant selection based on content type
+		switch(contentType) {
 			case 'service':
 				serviceSelection.style.display = 'block';
 				break;
@@ -186,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-	targetTypeSelect.addEventListener('change', toggleSelections);
+	contentTypeSelect.addEventListener('change', toggleSelections);
 	
 	// Initialize on page load
 	toggleSelections();

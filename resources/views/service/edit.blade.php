@@ -407,6 +407,50 @@
 								<small class="form-text text-muted">Mark as advertisement</small>
 							</div>
 						</div>
+
+						@if($service->id && $service->is_request)
+							<div class="form-group col-12 col-md-12 mb-4">
+								<div class="alert alert-info">
+									<h6><i class="gd-info-circle"></i> Request Information</h6>
+									<p class="mb-2">
+										<strong>Requested by:</strong> {{ $service->user->name ?? 'Unknown User' }} 
+										@if($service->user)
+											({{ $service->user->email }})
+										@endif
+									</p>
+									<p class="mb-2">
+										<strong>Request Date:</strong> 
+										{{ $service->requested_at ? $service->requested_at->format('M d, Y \a\t g:i A') : ($service->created_at ? $service->created_at->format('M d, Y \a\t g:i A') : 'N/A') }}
+									</p>
+									@if($service->isPending())
+										<p class="mb-0 text-warning"><strong>Status:</strong> Pending Approval</p>
+									@elseif($service->isApproved())
+										<p class="mb-0 text-success">
+											<strong>Status:</strong> Approved 
+											@if($service->approvedBy)
+												by {{ $service->approvedBy->name }} on {{ $service->approved_at->format('M d, Y') }}
+											@endif
+										</p>
+									@elseif($service->isRejected())
+										<p class="mb-2 text-danger">
+											<strong>Status:</strong> Rejected 
+											@if($service->rejectedBy)
+												by {{ $service->rejectedBy->name }} on {{ $service->rejected_at->format('M d, Y') }}
+											@endif
+										</p>
+										@if($service->rejection_reason)
+											<p class="mb-0"><strong>Reason:</strong> {{ $service->rejection_reason }}</p>
+										@endif
+									@endif
+								</div>
+							</div>
+						@endif
+
+						@if($service->is_request)
+							<input type="hidden" name="is_request" value="1">
+							<input type="hidden" name="user_id" value="{{ $service->user_id }}">
+							<input type="hidden" name="requested_at" value="{{ $service->requested_at }}">
+						@endif
 					</div>
 				</div>
 			</div>

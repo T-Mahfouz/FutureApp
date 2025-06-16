@@ -85,6 +85,14 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/services/bulk-destroy', [ServiceController::class, 'bulkDestroy'])->name('service.bulk-destroy');
     Route::post('/services/bulk-toggle-status', [ServiceController::class, 'bulkToggleStatus'])->name('service.bulk-toggle-status');
     
+
+    // Service request management routes
+    Route::get('/services/requests', [ServiceController::class, 'requests'])->name('service.requests');
+    Route::post('/services/{service}/approve', [ServiceController::class, 'approve'])->name('service.approve');
+    Route::post('/services/{service}/reject', [ServiceController::class, 'reject'])->name('service.reject');
+    Route::post('/services/bulk-action', [ServiceController::class, 'bulkAction'])->name('service.bulk-action');
+
+    
     // News
     Route::get('/news', [NewsController::class, 'index'])->name('news.index');
     Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
@@ -105,27 +113,33 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('category.toggle-status');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
-
-    // Ads
+    
     Route::get('/ads', [AdController::class, 'index'])->name('ad.index');
     Route::post('/ads/bulk-action', [AdController::class, 'bulkAction'])->name('ad.bulk-action');
     Route::get('/ads/create', [AdController::class, 'create'])->name('ad.create');
-    Route::post('/ads/create', [AdController::class, 'store'])->name('ad.store');
+    Route::post('/ads', [AdController::class, 'store'])->name('ad.store');
     Route::get('/ads/{ad}', [AdController::class, 'show'])->name('ad.show');
     Route::get('/ads/{ad}/edit', [AdController::class, 'edit'])->name('ad.edit');
     Route::patch('/ads/{ad}', [AdController::class, 'update'])->name('ad.update');
-    Route::delete('/ads/{id}', [AdController::class, 'destroy'])->name('ad.destroy');
+    Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->name('ad.destroy');
+    
+    // AJAX routes for dynamic dropdowns
+    Route::get('/ads/ajax/categories-by-city', [AdController::class, 'getCategoriesByCity'])->name('ad.categories-by-city');
+    Route::get('/ads/ajax/services-by-city-category', [AdController::class, 'getServicesByCityAndCategory'])->name('ad.services-by-city-category');
+
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');
     Route::get('/notifications/create', [NotificationController::class, 'create'])->name('notification.create');
     Route::post('/notifications/create', [NotificationController::class, 'store'])->name('notification.store');
-    Route::get('/notifications/send-firebase', [NotificationController::class, 'create'])->name('notification.send-firebase');
-    Route::post('/notifications/send-firebase', [NotificationController::class, 'sendFirebase'])->name('notification.send-firebase-post');
+    Route::get('/notifications/send-firebase', [NotificationController::class, 'sendFirebase'])->name('notification.send-firebase');
+    Route::post('/notifications/send-firebase', [NotificationController::class, 'processFirebase'])->name('notification.send-firebase-post');
+    Route::post('/notifications/bulk-action', [NotificationController::class, 'bulkAction'])->name('notification.bulk-action');
     Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notification.show');
     Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notification.destroy');
+
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index'])->name('setting.index');
