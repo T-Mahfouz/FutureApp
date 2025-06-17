@@ -315,7 +315,7 @@
 	</li>
 	<!-- End Settings -->
 
-	@if($adminHasCityAssignments)
+	{{-- @if($adminHasCityAssignments)
 	<!-- City Admin Info Section -->
 	<li class="sidebar-heading h6">My Cities</li>
 	<!-- End Title -->
@@ -330,7 +330,7 @@
 		</a>
 	</li>
 	@endforeach
-	@endif
+	@endif --}}
 
 </ul>
 </aside>
