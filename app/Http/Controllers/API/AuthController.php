@@ -23,7 +23,7 @@ class AuthController extends InitController
 
     public function login(Request $request)
     {
-        $credentials = $request->only(['email', 'password']);
+        $credentials = $request->only(['phone', 'password']);
 
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return jsonResponse(401, 'Wrong phone or password!');

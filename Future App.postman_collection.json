@@ -496,8 +496,8 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "email",
-									"value": "test@gmail.com",
+									"key": "phone",
+									"value": "0114254512",
 									"type": "text"
 								},
 								{
@@ -541,12 +541,12 @@
 								},
 								{
 									"key": "email",
-									"value": "test@gmail.com",
+									"value": "test2@gmail.com",
 									"type": "text"
 								},
 								{
 									"key": "phone",
-									"value": "",
+									"value": "0114254512",
 									"type": "text"
 								},
 								{
@@ -933,6 +933,87 @@
 							"path": [
 								"ads",
 								"city"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Ads",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Tarek",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "tarek@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{localhost}}/ads/filter?location=home&city_id=9&category_id=122&service_id=189",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"ads",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "location",
+									"value": "home",
+									"description": "home,category_profile,service_profile,all_locations"
+								},
+								{
+									"key": "city_id",
+									"value": "9"
+								},
+								{
+									"key": "category_id",
+									"value": "122"
+								},
+								{
+									"key": "service_id",
+									"value": "189"
+								}
 							]
 						}
 					},
@@ -2218,9 +2299,9 @@
 							]
 						},
 						"url": {
-							"raw": "{{localhost}}/settings/city?key=privacy_policy",
+							"raw": "{{server}}/settings/city?key=privacy_policy",
 							"host": [
-								"{{localhost}}"
+								"{{server}}"
 							],
 							"path": [
 								"settings",
@@ -2366,6 +2447,74 @@
 								{
 									"key": "key",
 									"value": "faq"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "City Contacts",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Tarek",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "tarek@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{localhost}}/settings/city?key=contacts",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"settings",
+								"city"
+							],
+							"query": [
+								{
+									"key": "key",
+									"value": "contacts"
 								}
 							]
 						}
@@ -2847,7 +2996,7 @@
 		},
 		{
 			"key": "server",
-			"value": "https://lightcyan-gerbil-554941.hostingersite.com/public/api",
+			"value": "https://darkviolet-horse-137762.hostingersite.com/public/api",
 			"type": "string"
 		}
 	]

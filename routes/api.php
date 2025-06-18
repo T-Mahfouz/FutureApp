@@ -73,6 +73,8 @@ RateLimiter::for('search', function (Request $request) {
 
 Route::middleware(['auth:api', 'throttle:api'])->group(function() {
     
+    Route::get('auth/logout', [AuthController::class, 'logout'])->name('logout');
+
     // Ads Routes
     Route::prefix('ads')->group(function () {
         Route::get('/city', [AdController::class, 'getCityAds']);
