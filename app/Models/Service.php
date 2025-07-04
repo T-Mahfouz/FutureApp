@@ -46,8 +46,8 @@ class Service extends Model
         'requested_at' => 'datetime',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
-        'lat' => 'decimal:8',
-        'lon' => 'decimal:8',
+        /* 'lat' => 'decimal:8',
+        'lon' => 'decimal:8', */
     ];
 
     protected $attributes = [

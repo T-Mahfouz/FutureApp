@@ -41,6 +41,7 @@ class ServiceController extends InitController
                     });
             })
             ->with('image')
+            ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -69,14 +70,14 @@ class ServiceController extends InitController
                     });
             })
             ->with(['image', 'categories'])
+            ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('arrangement_order', 'asc')
             ->orderBy('name', 'asc')
             ->get();
         
         $data = ServiceResource::collection($services);
 
-        return jsonResponse(200, 'done.', $data);
-        // return $this->successResponse($data, 'Data retrieved successfully');
+        return jsonResponse(200, 'Data retrieved successfully', $data);
     }
 
     /**
@@ -101,6 +102,7 @@ class ServiceController extends InitController
                 $query->where('category_id', $categoryId);
             })
             ->with(['image', 'categories'])
+            ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('arrangement_order', 'asc')
             ->orderBy('name', 'asc')
             ->get();
@@ -130,6 +132,7 @@ class ServiceController extends InitController
                     });
             })
             ->with(['image', 'images', 'categories', 'phones', 'rates'])
+            ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->find($id);
         
         if (!$service) {
@@ -229,6 +232,7 @@ class ServiceController extends InitController
         $services = $this->pipeline->where('user_id', $this->user->id)
             ->where('is_request', true)
             ->with(['image', 'categories'])
+            ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('requested_at', 'desc')
             ->get();
         

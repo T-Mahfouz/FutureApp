@@ -18,6 +18,7 @@ class ServiceResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'brief_description' => $this->brief_description,
+            'is_favorite' => $this->is_favorite,
             'description' => $this->when($request->routeIs('*.show') || $request->has('detailed'), $this->description ?? ''),
             'address' => $this->when($request->routeIs('*.show') || $request->has('detailed'), $this->address ?? ''),
             'lat' => $this->when($request->routeIs('*.show') || $request->has('detailed'), $this->lat ?? ''),

@@ -588,3 +588,23 @@ if (!function_exists('resizeImageSimple')) {
         }
     }
 }
+
+
+
+if (!function_exists('sendWhatsAppMessage')) {
+    function sendWhatsAppMessage($to, $message) {
+        $response = Http::withHeaders([
+            'apikey' => 'YOUR_GUPSHUP_API_KEY',
+        ])->post('https://api.gupshup.io/sm/api/v1/msg', [
+            'channel' => 'whatsapp',
+            'source' => 'YOUR_REGISTERED_NUMBER',
+            'destination' => $to, // مثال: "2010xxxxxxx"
+            'message' => json_encode([
+                'type' => 'text',
+                'text' => $message
+            ]),
+            'src.name' => 'Future'
+        ]);
+        return $response->json();
+    }
+}

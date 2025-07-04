@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AdController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\CityController;
 use App\Http\Controllers\API\ContactUsController;
 use App\Http\Controllers\API\FavoriteController;
 use App\Http\Controllers\API\NewsController;
@@ -70,6 +71,8 @@ RateLimiter::for('favorites', function (Request $request) {
 RateLimiter::for('search', function (Request $request) {
     return Limit::perMinute(30)->by($request->user()->id);
 });
+
+Route::get('cities', [CityController::class, 'index']);
 
 Route::middleware(['auth:api', 'throttle:api'])->group(function() {
     
