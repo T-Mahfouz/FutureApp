@@ -45,13 +45,8 @@ class ServiceResource extends JsonResource
                     ];
                 });
             }),
-            'average_rating' => $this->whenLoaded('rates', function() {
-                return round($this->averageRating(), 1);
-            }),
-            'ratings_count' => $this->whenLoaded('rates', function() {
-                return $this->rates->count();
-            }),
-
+            'average_rating' => round($this->averageRating(), 1),
+            'ratings_count' => $this->rates->count(),
             'is_request' => (bool)$this->is_request,
             'status' => $this->status, // uses the status attribute from model
             'requested_at' => $this->requested_at,

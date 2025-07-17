@@ -100,6 +100,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function() {
 
     // Services Routes
     Route::prefix('services')->group(function () {
+        Route::post('/rate', [ServiceController::class, 'rate']); // Rate
         Route::get('/latest', [ServiceController::class, 'getLatestServices']); // Latest services
         Route::get('/city', [ServiceController::class, 'getCityServices']); // Bonus: All city services
         Route::get('/category/{categoryId}', [ServiceController::class, 'getServicesByCategory']); // Bonus: By category

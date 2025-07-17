@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\API\RateRequest;
 use App\Http\Requests\API\UserServiceRequest;
 use App\Http\Resources\API\ServiceResource;
 use App\Models\Service;
@@ -40,12 +41,12 @@ class ServiceController extends InitController
                                 ->whereNotNull('approved_at'); // User requests must be approved
                     });
             })
-            ->with('image')
+            ->with(['image'])
             ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
-        
+
         $data = ServiceResource::collection($services);
 
         return jsonResponse(200, 'done.', $data);
@@ -239,5 +240,19 @@ class ServiceController extends InitController
         $data = ServiceResource::collection($services);
 
         return jsonResponse(200, 'done.', $data);
+    }
+
+
+    public function rate(RateRequest $request) 
+    {
+        $this->pipeline->setModel('Rate');
+        $rate = $this->pipeline->updateOrCreate([
+            'user_id' => $this->user->id,
+            'service_id' => $request->service_id
+        ], [
+            'rate' => $request->rate
+        ]);
+
+        return jsonResponse(201, 'done.');
     }
 }
