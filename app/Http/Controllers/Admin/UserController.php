@@ -114,7 +114,9 @@ class UserController extends Controller
 
         // NEW: Delete user image if exists
         if($user->image){
-            Storage::disk('public')->delete($user->image->path);
+            if (!empty($user->image->path)) {
+                Storage::disk('public')->delete($user->image->path);
+            }
             $user->image->delete();
         }
 		

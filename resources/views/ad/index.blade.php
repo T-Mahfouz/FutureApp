@@ -286,9 +286,12 @@
 								<a class="link-dark d-inline-block" href="{{ route('ad.edit', $ad) }}" title="Edit">
 									<i class="gd-pencil icon-text"></i>
 								</a>
-								<a class="link-dark d-inline-block" href="#" onclick="destroy(event, {{$ad->id}})" title="Delete">
+								<a class="link-dark d-inline-block" href="#" onclick="deleteItem(event, {{$ad->id}})" title="Delete">
 									<i class="gd-trash icon-text"></i>
 								</a>
+								{{-- <a class="link-dark d-inline-block" href="#" onclick="destroy(event, {{$ad->id}})" title="Delete">
+									<i class="gd-trash icon-text"></i>
+								</a> --}}
 							</div>
 						</td>
 					</tr>
@@ -408,6 +411,60 @@ function destroy(event, id) {
         window.scrollTo(0, 0);
     });
 }
+function deleteItem(event, id) {
+	event.preventDefault();
+
+	if (!confirm('Delete this ad? This action cannot be undone.')) {
+		return;
+	}
+
+	let devID = `ad-row-${id}`;
+	// Laravel route with placeholder
+	let url = "{{ route('ad.destroy', ':id') }}";
+	url = url.replace(':id', id);
+
+	const csrf = $('meta[name="csrf-token"]').attr('content');
+
+	let alertClass = '';
+	let iconClass = '';
+	let title = '';
+	let message = '';
+
+	$.ajax({
+		method: "DELETE",
+		url: url,
+		headers: {
+			'X-CSRF-TOKEN': csrf
+		}
+	})
+	.done(function(data) {
+		alertClass = 'alert-success';
+		iconClass = 'gd-info-circle';
+		title = 'Success!';
+		message = data.message || 'Ad deleted successfully';
+		$("#" + devID).remove();
+	})
+	.fail(function(err) {
+		alertClass = 'alert-danger';
+		iconClass = 'gd-alert';
+		title = 'Error!';
+		message = err.responseJSON ? err.responseJSON.message : 'An error occurred';
+	})
+	.always(function() {
+		let alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="${iconClass} mr-2"></i>
+                <strong>${title}</strong> ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+        alertContainer.innerHTML = alertHtml;
+        window.scrollTo(0, 0);
+	});
+}
+
 </script>
 
 @endsection
