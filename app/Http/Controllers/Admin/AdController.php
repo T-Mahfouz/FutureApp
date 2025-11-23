@@ -167,11 +167,10 @@ class AdController extends Controller
         }
 
         $accessibleCityIds = $this->getAccessibleCityIds();
-
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
-            'location' => 'required|in:home,home_up,home_down,category_profile,service_profile,all_locations',
+            'location' => 'required|in:all_locations,service_profile,category_profile,home_down,home_up',
             'link' => 'nullable|url|max:500', 
             'expiration_date' => 'nullable|date|after:today',
             'city_id' => ['required', 'exists:cities,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {

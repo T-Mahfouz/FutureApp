@@ -76,6 +76,9 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/services', [ServiceController::class, 'index'])->name('service.index');
     Route::get('/services/create', [ServiceController::class, 'create'])->name('service.create');
     Route::post('/services/create', [ServiceController::class, 'store'])->name('service.store');
+
+    Route::get('/services/ajax/parent-by-city', [ServiceController::class, 'getParentServicesByCityId'])->name('service.getParentServicesByCityId');
+
     Route::get('/services/{service}', [ServiceController::class, 'show'])->name('service.show');
     Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('service.edit');
     Route::patch('/services/{service}', [ServiceController::class, 'update'])->name('service.update');
@@ -108,6 +111,9 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/categories', [CategoryController::class, 'index'])->name('category.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('category.create');
     Route::post('/categories/create', [CategoryController::class, 'store'])->name('category.store');
+
+    Route::get('/categories/ajax/children-by-ids', [CategoryController::class, 'getChildrenByIds'])->name('category.getChildrenByIds');
+
     Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('category.show');
     Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('category.edit');
     Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('category.update');
@@ -115,6 +121,8 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
     
+    Route::get('/categories/ajax/by-city', [CategoryController::class, 'getByCityId'])->name('category.getByCityId');
+
     Route::get('/ads', [AdController::class, 'index'])->name('ad.index');
     Route::post('/ads/bulk-action', [AdController::class, 'bulkAction'])->name('ad.bulk-action');
     Route::get('/ads/create', [AdController::class, 'create'])->name('ad.create');

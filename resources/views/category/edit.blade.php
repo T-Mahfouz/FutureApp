@@ -263,3 +263,79 @@
 	</div>
 </div>
 @endsection
+
+@section('scripts')
+<script>
+$(document).ready(function() {
+    const citySelect = $('#city_id');
+    const parentSelect = $('#parent_id');
+    const currentCategoryId = {{ $category->id ?? 'null' }};
+    const currentParentId = {{ old('parent_id', $category->parent_id) ?? 'null' }};
+
+    citySelect.on('change', function() {
+        const cityId = $(this).val();
+        
+        console.log('City changed to:', cityId);
+        
+        if (!cityId) {
+            parentSelect.html('<option value="">Main Category (No Parent)</option>');
+            return;
+        }
+
+        // Show loading state
+        parentSelect.prop('disabled', true);
+        parentSelect.html('<option value="">Loading...</option>');
+
+        // Build the URL
+        const url = '{{ route("category.getByCityId") }}';
+        
+        console.log('Fetching from:', url);
+
+        // Fetch categories for the selected city
+        $.ajax({
+            url: url,
+            method: 'GET',
+            data: {
+                city_id: cityId,
+                exclude_id: currentCategoryId || ''
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            success: function(data) {
+                console.log('Response:', data);
+                
+                // Reset parent select
+                parentSelect.html('<option value="">Main Category (No Parent)</option>');
+                
+                // Add categories as options
+                if (data.categories && data.categories.length > 0) {
+                    $.each(data.categories, function(index, category) {
+                        const option = $('<option></option>')
+                            .val(category.id)
+                            .text(category.name);
+                        
+                        if (category.id == currentParentId) {
+                            option.prop('selected', true);
+                        }
+                        
+                        parentSelect.append(option);
+                    });
+                } else {
+                    parentSelect.append('<option value="">No categories available</option>');
+                }
+                
+                parentSelect.prop('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching categories:', error);
+                console.error('Response:', xhr.responseText);
+                parentSelect.html('<option value="">Error loading categories</option>');
+                parentSelect.prop('disabled', false);
+            }
+        });
+    });
+});
+</script>
+@endsection

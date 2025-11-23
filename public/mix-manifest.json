@@ -1,5 +1,5 @@
 {
-    "/graindashboard/js/graindashboard.js": "http://localhost/future-new/public/graindashboard/js/graindashboard.js",
-    "/graindashboard/css/graindashboard.css": "http://localhost/future-new/public/graindashboard/css/graindashboard.css",
-    "/graindashboard/js/graindashboard.vendor.js": "http://localhost/future-new/public/graindashboard/js/graindashboard.vendor.js"
+    "/graindashboard/js/graindashboard.js": "https://futureapp-eg.test/graindashboard/js/graindashboard.js",
+    "/graindashboard/css/graindashboard.css": "https://futureapp-eg.test/graindashboard/css/graindashboard.css",
+    "/graindashboard/js/graindashboard.vendor.js": "https://futureapp-eg.test/graindashboard/js/graindashboard.vendor.js"
 }

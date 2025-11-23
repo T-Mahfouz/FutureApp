@@ -39,7 +39,7 @@ class AdController extends InitController
               ->orWhere('expiration_date', '>', now());
         });
 
-        if ($location) {
+        if ($location && $location != 'all_locations') {
            $query = $query->where('location', $location);
         }
 
@@ -121,7 +121,6 @@ class AdController extends InitController
         }
 
         $query = $this->pipeline->where('city_id', $this->user->city_id)
-            ->where('location', $location)
             ->where(function($q) {
                 $q->whereNull('expiration_date')
                   ->orWhere('expiration_date', '>', now());
@@ -136,7 +135,7 @@ class AdController extends InitController
         if ($serviceId) {
             $query = $query->where('service_id', $serviceId);
         }
-        if ($location) {
+        if ($location && $location != 'all_locations') {
             $query = $query->where('location', $location);
         }
             

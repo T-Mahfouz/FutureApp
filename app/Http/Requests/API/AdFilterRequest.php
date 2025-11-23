@@ -29,7 +29,7 @@ class AdFilterRequest extends ShapeRequest
         $categoryId = $this->input('category_id');
         
         return [
-            'location' => 'required|in:home,category_profile,service_profile,all_locations',
+            'location' => 'required|in:all_locations,service_profile,category_profile,home_down,home_up',
             'city_id' => ['nullable', 'exists:cities,id', function ($attribute, $value, $fail) use ($userCityId) {
                 if ($value != $userCityId) {
                     $fail('You do not belong to this city.');

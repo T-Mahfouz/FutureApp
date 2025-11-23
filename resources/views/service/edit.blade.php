@@ -623,3 +623,82 @@ function removeImage(event, id) {
 
 </script>
 @endsection
+
+
+
+@section('scripts')
+<script>
+$(document).ready(function() {
+    const citySelect = $('#city_id');
+    const categoriesSelect = $('#categories');
+    const currentServiceId = {{ $service->id ?? 'null' }};
+    const currentCategories = @json(old('categories', $service->categories->pluck('id')->toArray()));
+
+    citySelect.on('change', function() {
+        const cityId = $(this).val();
+        
+        console.log('City changed to:', cityId);
+        
+        if (!cityId) {
+            categoriesSelect.html('<option value="">Select a city first</option>');
+            return;
+        }
+
+        // Show loading state
+        categoriesSelect.prop('disabled', true);
+        categoriesSelect.html('<option value="">Loading categories...</option>');
+
+        // Build the URL
+        const url = '{{ route("category.getByCityId") }}';
+        
+        console.log('Fetching categories from:', url);
+
+        // Fetch categories for the selected city
+        $.ajax({
+            url: url,
+            method: 'GET',
+            data: {
+                city_id: cityId,
+                get_all: true // Get all categories, not just parent ones
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            success: function(data) {
+                console.log('Categories response:', data);
+                
+                // Reset categories select
+                categoriesSelect.html('');
+                
+                // Add categories as options
+                if (data.categories && data.categories.length > 0) {
+                    $.each(data.categories, function(index, category) {
+                        const option = $('<option></option>')
+                            .val(category.id)
+                            .text(category.name);
+                        
+                        // Restore previously selected categories if they exist
+                        if (currentCategories.includes(category.id)) {
+                            option.prop('selected', true);
+                        }
+                        
+                        categoriesSelect.append(option);
+                    });
+                } else {
+                    categoriesSelect.html('<option value="">No categories available for this city</option>');
+                }
+                
+                categoriesSelect.prop('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching categories:', error);
+                console.error('Response:', xhr.responseText);
+                categoriesSelect.html('<option value="">Error loading categories</option>');
+                categoriesSelect.prop('disabled', false);
+            }
+        });
+    });
+});
+</script>
+@endsection

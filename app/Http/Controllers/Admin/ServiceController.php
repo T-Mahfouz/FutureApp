@@ -759,4 +759,39 @@ class ServiceController extends Controller
 
         return redirect()->route('service.requests')->with('status', $message);
     }
+
+
+    public function getParentServicesByCityId(Request $request)
+    {
+        $query = Service::query();
+        
+        // Filter by city
+        if ($request->has('city_id') && $request->city_id) {
+            $query->where('city_id', $request->city_id);
+        }
+        
+        // Only get parent services (services without a parent)
+        $query->whereNull('parent_id');
+        
+        // Exclude specific service (to prevent selecting itself as parent)
+        if ($request->has('exclude_id') && $request->exclude_id) {
+            $query->where('id', '!=', $request->exclude_id);
+        }
+        
+        // Apply city restriction based on admin's access
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $query->whereIn('city_id', $accessibleCityIds);
+        
+        // Only show active services
+        $query->where('valid', 1);
+        
+        // Get services
+        $services = $query->orderBy('name')
+                        ->get(['id', 'name']);
+        
+        return response()->json([
+            'success' => true,
+            'services' => $services
+        ]);
+    }
 }

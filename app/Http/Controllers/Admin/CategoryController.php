@@ -424,4 +424,75 @@ class CategoryController extends Controller
             ->route('category.index')
             ->with(!empty($deletedItems) ? 'status' : 'error', $message ?: 'No items were deleted.');
     }
+    
+    
+    public function getByCityId(Request $request)
+    {
+        $query = Category::query();
+        
+        // Filter by city
+        if ($request->has('city_id') && $request->city_id) {
+            $query->where('city_id', $request->city_id);
+        }
+        
+        // Exclude specific category (to prevent selecting itself as parent)
+        if ($request->has('exclude_id') && $request->exclude_id) {
+            $query->where('id', '!=', $request->exclude_id);
+        }
+        
+        // If get_all is true, get all categories, otherwise only parent categories
+        if (!$request->has('get_all') || $request->get_all == 'false' || !$request->get_all) {
+            $query->whereNull('parent_id');
+        }
+        // Get categories
+        $categories = $query->where('active', 1) // Only show active categories
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        
+        return response()->json([
+            'success' => true,
+            'categories' => $categories
+        ]);
+    }
+
+    /**
+     * AJAX: Get child categories by multiple parent category IDs
+     */
+    public function getChildrenByIds(Request $request)
+    {
+        $categoryIds = $request->input('category_ids', []);
+        
+        if (empty($categoryIds)) {
+            return response()->json([
+                'success' => true,
+                'subCategories' => []
+            ]);
+        }
+        
+        // Ensure it's an array
+        if (!is_array($categoryIds)) {
+            $categoryIds = [$categoryIds];
+        }
+        
+        // Get child categories for the selected parent categories
+        $subCategories = Category::whereIn('parent_id', $categoryIds)
+            ->where('active', 1)
+            ->with('parent')
+            ->orderBy('name')
+            ->get()
+            ->map(function($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'parent_name' => $category->parent ? $category->parent->name : null,
+                    'description' => $category->description,
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'subCategories' => $subCategories
+        ]);
+    }
+
 }
