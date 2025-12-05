@@ -125,7 +125,7 @@
 					<div class="form-group col-12">
 						<label for="service_id">Select Service</label>
 						<select class="form-control{{ $errors->has('service_id') ? ' is-invalid' : '' }}" id="service_id" name="service_id">
-							<option value="">Select Service</option>
+							<option value="">Select cities first</option>
 							@foreach($services as $service)
 								<option value="{{ $service->id }}" {{ old('service_id', $notification->service_id) == $service->id ? 'selected' : '' }}>
 									{{ $service->name }} ({{ $service->city->name ?? 'No City' }})
@@ -143,7 +143,7 @@
 					<div class="form-group col-12">
 						<label for="news_id">Select News</label>
 						<select class="form-control{{ $errors->has('news_id') ? ' is-invalid' : '' }}" id="news_id" name="news_id">
-							<option value="">Select News</option>
+							<option value="">Select cities first</option>
 							@foreach($news as $newsItem)
 								<option value="{{ $newsItem->id }}" {{ old('news_id', $notification->news_id) == $newsItem->id ? 'selected' : '' }}>{{ $newsItem->name }}</option>
 							@endforeach
@@ -201,4 +201,148 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+@endsection
+
+@section('scripts')
+<script>
+$(document).ready(function() {
+    const citySelect = $('#city_ids');
+    const serviceSelect = $('#service_id');
+    const newsSelect = $('#news_id');
+    const currentServiceId = {{ old('service_id', $notification->service_id) ?? 'null' }};
+    const currentNewsId = {{ old('news_id', $notification->news_id) ?? 'null' }};
+
+    // Load services and news on page load if cities are already selected
+    if (citySelect.val() && citySelect.val().length > 0) {
+        loadServicesAndNews(citySelect.val());
+    }
+
+    // Handle city change
+    citySelect.on('change', function() {
+        const cityIds = $(this).val();
+        
+        console.log('Cities changed to:', cityIds);
+        
+        if (!cityIds || cityIds.length === 0) {
+            serviceSelect.html('<option value="">Select cities first</option>');
+            newsSelect.html('<option value="">Select cities first</option>');
+            serviceSelect.prop('disabled', true);
+            newsSelect.prop('disabled', true);
+            return;
+        }
+
+        loadServicesAndNews(cityIds);
+    });
+
+    function loadServicesAndNews(cityIds) {
+        // Load services
+        loadServices(cityIds);
+        
+        // Load news
+        loadNews(cityIds);
+    }
+
+    function loadServices(cityIds) {
+        // Show loading state
+        serviceSelect.prop('disabled', true);
+        serviceSelect.html('<option value="">Loading services...</option>');
+
+        const url = '{{ route("notification.getServicesByCities") }}';
+        
+        console.log('Fetching services from:', url);
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            data: {
+                city_ids: cityIds
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            success: function(data) {
+                console.log('Services response:', data);
+                
+                serviceSelect.html('<option value="">Select Service</option>');
+                
+                if (data.services && data.services.length > 0) {
+                    $.each(data.services, function(index, service) {
+                        const option = $('<option></option>')
+                            .val(service.id)
+                            .text(service.name + ' (' + service.city_name + ')');
+                        
+                        if (service.id == currentServiceId) {
+                            option.prop('selected', true);
+                        }
+                        
+                        serviceSelect.append(option);
+                    });
+                } else {
+                    serviceSelect.html('<option value="">No services available for selected cities</option>');
+                }
+                
+                serviceSelect.prop('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching services:', error);
+                console.error('Response:', xhr.responseText);
+                serviceSelect.html('<option value="">Error loading services</option>');
+                serviceSelect.prop('disabled', false);
+            }
+        });
+    }
+
+    function loadNews(cityIds) {
+        // Show loading state
+        newsSelect.prop('disabled', true);
+        newsSelect.html('<option value="">Loading news...</option>');
+
+        const url = '{{ route("notification.getNewsByCities") }}';
+        
+        console.log('Fetching news from:', url);
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            data: {
+                city_ids: cityIds
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            success: function(data) {
+                console.log('News response:', data);
+                
+                newsSelect.html('<option value="">Select News</option>');
+                
+                if (data.news && data.news.length > 0) {
+                    $.each(data.news, function(index, newsItem) {
+                        const option = $('<option></option>')
+                            .val(newsItem.id)
+                            .text(newsItem.name + ' (' + newsItem.city_name + ')');
+                        
+                        if (newsItem.id == currentNewsId) {
+                            option.prop('selected', true);
+                        }
+                        
+                        newsSelect.append(option);
+                    });
+                } else {
+                    newsSelect.html('<option value="">No news available for selected cities</option>');
+                }
+                
+                newsSelect.prop('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching news:', error);
+                console.error('Response:', xhr.responseText);
+                newsSelect.html('<option value="">Error loading news</option>');
+                newsSelect.prop('disabled', false);
+            }
+        });
+    }
+});
+</script>
 @endsection

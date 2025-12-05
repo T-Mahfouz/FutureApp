@@ -144,6 +144,10 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/notifications/send-firebase', [NotificationController::class, 'sendFirebase'])->name('notification.send-firebase');
     Route::post('/notifications/send-firebase', [NotificationController::class, 'processFirebase'])->name('notification.send-firebase-post');
     Route::post('/notifications/bulk-action', [NotificationController::class, 'bulkAction'])->name('notification.bulk-action');
+    
+    Route::get('/notifications/ajax/services-by-cities', [NotificationController::class, 'getServicesByCities'])->name('notification.getServicesByCities');
+    Route::get('/notifications/ajax/news-by-cities', [NotificationController::class, 'getNewsByCities'])->name('notification.getNewsByCities');
+    
     Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notification.show');
     Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');

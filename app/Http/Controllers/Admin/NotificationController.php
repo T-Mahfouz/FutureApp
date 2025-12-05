@@ -224,17 +224,23 @@ class NotificationController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
 
-        // Either service or news is required
-        $rules['service_or_news'] = ['required', function ($attribute, $value, $fail) use ($request) {
-            if (!$request->service_id && !$request->news_id) {
-                $fail('You must select either a service or news item for this notification.');
-            }
-            if ($request->service_id && $request->news_id) {
-                $fail('You can only select either a service OR news item, not both.');
-            }
-        }];
-
         $request->validate($rules);
+
+        // Custom validation: Either service or news is required
+        if (!$request->service_id && !$request->news_id) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['content_type' => 'You must select either a service or news item for this notification.']);
+        }
+
+        // Custom validation: Cannot select both service and news
+        if ($request->service_id && $request->news_id) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->withErrors(['content_type' => 'You can only select either a service OR news item, not both.']);
+        }
 
         // Handle image upload
         $imageId = $notification->image_id;
@@ -433,5 +439,99 @@ class NotificationController extends Controller
         return redirect()
             ->route('notification.index')
             ->with(!empty($deletedItems) ? 'status' : 'error', $message ?: 'No items were deleted.');
+    }
+
+
+
+
+
+
+    /**
+     * AJAX: Get services by city IDs
+     */
+    public function getServicesByCities(Request $request)
+    {
+        $cityIds = $request->input('city_ids', []);
+        
+        if (empty($cityIds)) {
+            return response()->json([
+                'success' => true,
+                'services' => []
+            ]);
+        }
+        
+        // Ensure it's an array
+        if (!is_array($cityIds)) {
+            $cityIds = [$cityIds];
+        }
+        
+        // Apply city restriction based on admin's access
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        // Only get services from cities the admin has access to
+        $allowedCityIds = array_intersect($cityIds, $accessibleCityIds);
+        
+        // Get services from the selected cities
+        $services = Service::whereIn('city_id', $allowedCityIds)
+            ->where('valid', 1) // Only active services
+            ->with('city')
+            ->orderBy('name')
+            ->get()
+            ->map(function($service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'city_name' => $service->city ? $service->city->name : 'N/A',
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'services' => $services
+        ]);
+    }
+
+    /**
+     * AJAX: Get news by city IDs
+     */
+    public function getNewsByCities(Request $request)
+    {
+        $cityIds = $request->input('city_ids', []);
+        
+        if (empty($cityIds)) {
+            return response()->json([
+                'success' => true,
+                'news' => []
+            ]);
+        }
+        
+        // Ensure it's an array
+        if (!is_array($cityIds)) {
+            $cityIds = [$cityIds];
+        }
+        
+        // Apply city restriction based on admin's access
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        
+        // Only get news from cities the admin has access to
+        $allowedCityIds = array_intersect($cityIds, $accessibleCityIds);
+        
+        // Get news from the selected cities
+        $news = News::whereIn('city_id', $allowedCityIds)
+                ->with('city')
+                ->orderBy('name')
+                ->get()
+                ->map(function($newsItem) {
+                    return [
+                        'id' => $newsItem->id,
+                        'name' => $newsItem->name,
+                        'city_name' => $newsItem->city ? $newsItem->city->name : 'N/A',
+                    ];
+                });
+        
+        return response()->json([
+            'success' => true,
+            'news' => $news
+        ]);
     }
 }
