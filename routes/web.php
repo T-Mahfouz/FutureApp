@@ -148,6 +148,10 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/notifications/ajax/services-by-cities', [NotificationController::class, 'getServicesByCities'])->name('notification.getServicesByCities');
     Route::get('/notifications/ajax/news-by-cities', [NotificationController::class, 'getNewsByCities'])->name('notification.getNewsByCities');
     
+    // NEW: Send single notification routes
+    Route::post('/notifications/{notification}/send', [NotificationController::class, 'sendSingleNotification'])->name('notification.send');
+    Route::post('/notifications/{notification}/send-ajax', [NotificationController::class, 'sendSingleNotificationAjax'])->name('notification.send-ajax');
+
     Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notification.show');
     Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');

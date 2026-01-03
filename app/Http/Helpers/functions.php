@@ -11,6 +11,10 @@ use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Log;
 
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+
 if (!function_exists('jsonResponse')) {
     function jsonResponse($code = 200, $message = 'done', $data = []) {
         $code = getCode($code);
@@ -310,8 +314,8 @@ if (!function_exists('getCurrentUser')) {
 }
 
 
-if (!function_exists('FCMPush')) {
-    function FCMPush($cityID,$title,$body,$type,$extra=[])
+if (!function_exists('FCMPushOld')) {
+    function FCMPushOld($cityID,$title,$body,$type,$extra=[])
     {
         $config =  getConfig($cityID);
         if(!$config)
@@ -345,7 +349,7 @@ if (!function_exists('FCMPush')) {
         }
         $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
 
-        $credentials = new ServiceAccountCredentials($scopes, \Illuminate\Support\Facades\Storage::path('client_secret_google.json'));
+        $credentials = new ServiceAccountCredentials($scopes, Storage::path('client_secret_google.json'));
 
         // Get the access token
         $token = $credentials->fetchAuthToken();
