@@ -31,75 +31,152 @@ if (!function_exists(function: 'testAuth')) {
     }
 }
 
-if (!function_exists('FCMPushOldOne')) {
-    function FCMPushOldOne($cityID,$title,$body,$type,$extra=[])
-    {
-        $config =  getConfig($cityID);
-        if(!$config)
-            return null;
-        $url = 'https://fcm.googleapis.com/v1/projects/future-app-40ca2/messages:send';
+function FCMPush($cityID, $title, $body, $type, $extra = [])
+{
+    $projectId = 'dalel-75ad2';
 
-        $data = array();
-        foreach ($extra as $key => $value) {
-        $data[$key] = $value;
-        }
+    $config = getConfig($cityID);
+    if (!$config) return null;
 
-        if($config->firebase_topic != null) {
-            $fields = [
-            "message" => [
-                "topic" => $config->firebase_topic,
-                "notification" => [
-                    "title" => (string)$title,
-                    "body"  => (string)$body,
-                    "image" => isset($extra['image']) ? (string)$extra['image'] : '',
-                ],
-                "data" => [
-                    "priority" => "high",
-                    "title" => (string)$title,
-                    "body"  => (string)$body,
-                    "image" => isset($extra['image']) ? $extra['image'] : '',
-                    "institute_id" => isset($extra['institute_id']) ? (string)$extra['institute_id'] : 0
-                ],
-
-            ]
-            ];
-        }
-        $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-
-        $credentials = new ServiceAccountCredentials($scopes, Storage::path('client_secret_google.json'));
-
-        // Get the access token
-        $token = $credentials->fetchAuthToken();
-
-        // Print the access token
-        $accessToken = $token['access_token'];
-
-        $fcmApiKey = $config->firebase_token;
-
-        $headers = array(
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type:application/json'
-        );
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
-        $result = curl_exec($ch);
-        if ($result === false) {
-            die('cUrl faild: '.curl_error($ch));
-        }
-        curl_close($ch);
-        
-        return $result;
+    if (empty($config->firebase_topic)) {
+        // No target -> nothing to send
+        return null;
     }
 
+    $url = "https://fcm.googleapis.com/v1/projects/$projectId/messages:send";
+
+    // IMPORTANT: this must be a SERVICE ACCOUNT json, not an OAuth client secret json
+    $serviceAccountPath = Storage::disk('local')->path('client_secret_google.json');
+
+    $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+    $credentials = new ServiceAccountCredentials($scopes, $serviceAccountPath);
+
+    $token = $credentials->fetchAuthToken();
+    $accessToken = $token['access_token'] ?? null;
+    if (!$accessToken) {
+        throw new \RuntimeException("Failed to fetch Google access token for FCM.");
+    }
+
+    // Ensure all data values are strings
+    $data = [
+        "type"       => (string) $type,
+        "title"      => (string) $title,
+        "body"       => (string) $body,
+        "image"      => isset($extra['image']) ? (string) $extra['image'] : "",
+        "service_id" => isset($extra['service_id']) ? (string) $extra['service_id'] : "0",
+    ];
+
+    // Add the rest of $extra as strings (optional)
+    foreach ($extra as $k => $v) {
+        $data[$k] = is_scalar($v) ? (string) $v : json_encode($v);
+    }
+    
+    /* $fields = [
+        "message" => [
+            "topic" => $config->firebase_topic,
+            "notification" => [
+                "title" => (string) $title,
+                "body"  => (string) $body,
+                "image" => isset($extra['image']) ? (string) $extra['image'] : null,
+            ],
+            "data" => $data,
+            "android" => [
+                "priority" => "HIGH",
+            ],
+        ],
+    ]; */
+    $fields = [
+        "message" => [
+            "topic" => $config->firebase_topic ?? 'future_app',
+            // Common block (applies to all platforms unless overridden)
+            "notification" => [
+                "title" => (string) $title,
+                "body"  => (string) $body,
+                "image" => isset($extra['image']) ? (string) $extra['image'] : null,
+            ],
+            "data" => $data, // make sure all values are strings
+            // Android-specific
+            "android" => [
+                "priority" => "HIGH",
+            ],
+            // iOS-specific (APNs)
+            "apns" => [
+                "headers" => [
+                    // Visible notification
+                    "apns-push-type" => "alert",
+                    // 10 = high priority (immediate)
+                    "apns-priority"  => "10",
+                ],
+                "payload" => [
+                    "aps" => [
+                        "alert" => [
+                            "title" => (string) $title,
+                            "body"  => (string) $body,
+                        ],
+                        "sound" => "default",
+                        // "badge" => 1, // optional
+                        // If you need Notification Service Extension (e.g., rich media), set this:
+                        "mutable-content" => 1,
+                    ],
+                ],
+                "fcm_options" => [
+                    // helps you filter reports + (sometimes) rich media handling depending on client setup
+                    "analytics_label" => "future_app",
+                    // If you use images on iOS with NSE, include it here too:
+                    "image" => isset($extra['image']) ? (string) $extra['image'] : null,
+                ],
+            ],
+        ],
+    ];
+
+    $headers = [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/json; charset=UTF-8',
+    ];
+
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POSTFIELDS => json_encode($fields, JSON_UNESCAPED_UNICODE),
+        // Don't disable SSL verification in production
+    ]);
+    dd($fields);
+    $result = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if ($result === false) {
+        throw new \RuntimeException('cURL failed: ' . curl_error($ch));
+    }
+
+    curl_close($ch);
+
+    if ($httpCode >= 400) {
+        // FCM returns useful JSON errors here
+        throw new \RuntimeException("FCM error ($httpCode): " . $result);
+    }
+    /* if ($httpCode === 200) {
+        $decoded = json_decode($result, true);
+        $messageId = null;
+
+        if (!empty($decoded['name']) && preg_match('~/messages/(\d+)$~', $decoded['name'], $m)) {
+            $messageId = $m[1];
+        }
+    } */
+    $response = json_decode($result, true);
+
+    return [
+        'success' => $httpCode === 200,
+        'http_code' => $httpCode,
+        'response' => $response,
+        'message_id' => $response['name'] ?? null,
+    ];
 }
-function FCMPush($cityID, $title, $body, $type, $extra = [])
+
+
+function FCMPushNew($cityID, $title, $body, $type, $extra = [])
 {
     $config = getConfig($cityID);
 
@@ -114,7 +191,8 @@ function FCMPush($cityID, $title, $body, $type, $extra = [])
     }
 
     // Firebase Project ID - update this or store in config
-    $projectId = $config->firebase_project_id ?? 'dalel-75ad2';
+    // $projectId = $config->firebase_project_id ?? 'dalel-75ad2';
+    $projectId = 'dalel-75ad2';
     $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
     try {
