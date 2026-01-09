@@ -143,7 +143,7 @@ function FCMPush($cityID, $title, $body, $type, $extra = [])
         CURLOPT_POSTFIELDS => json_encode($fields, JSON_UNESCAPED_UNICODE),
         // Don't disable SSL verification in production
     ]);
-    dd($fields);
+    
     $result = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
