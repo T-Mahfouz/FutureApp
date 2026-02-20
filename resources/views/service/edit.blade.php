@@ -417,7 +417,34 @@
 								<small class="form-text text-muted">Mark as advertisement</small>
 							</div>
 						</div>
+					</div>
 
+					<!-- Service Date Range -->
+					<div class="form-row">
+						<div class="form-group col-12 col-md-6">
+							<label for="start_date">Start Date</label>
+							<input type="datetime-local" class="form-control{{ $errors->has('start_date') ? ' is-invalid' : '' }}"
+								   value="{{ old('start_date', $service->start_date ? $service->start_date->format('Y-m-d\TH:i') : '') }}"
+								   id="start_date" name="start_date">
+							@if($errors->has('start_date'))
+								<div class="invalid-feedback">{{ $errors->first('start_date') }}</div>
+							@endif
+							<small class="form-text text-muted">Leave empty to start immediately</small>
+						</div>
+
+						<div class="form-group col-12 col-md-6">
+							<label for="end_date">End Date</label>
+							<input type="datetime-local" class="form-control{{ $errors->has('end_date') ? ' is-invalid' : '' }}"
+								   value="{{ old('end_date', $service->end_date ? $service->end_date->format('Y-m-d\TH:i') : '') }}"
+								   id="end_date" name="end_date">
+							@if($errors->has('end_date'))
+								<div class="invalid-feedback">{{ $errors->first('end_date') }}</div>
+							@endif
+							<small class="form-text text-muted">Leave empty for no expiration</small>
+						</div>
+					</div>
+
+					<div class="form-row">
 						@if($service->id && $service->is_request)
 							<div class="form-group col-12 col-md-12 mb-4">
 								<div class="alert alert-info">

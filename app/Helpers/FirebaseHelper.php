@@ -11,7 +11,7 @@ class FirebaseHelper
 
     public static function init()
     {
-        self::$serverKey = env('FIREBASE_SERVER_KEY');
+        self::$serverKey = config('services.firebase.server_key');
     }
 
     /**

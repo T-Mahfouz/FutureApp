@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ServiceController extends Controller
 {
@@ -232,6 +233,8 @@ class ServiceController extends Controller
             'valid' => 'boolean',
             'is_add' => 'boolean',
             'arrangement_order' => 'nullable|integer|min:1',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
             'parent_id' => ['nullable', 'exists:services,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
                 if ($value) {
                     $parentService = Service::find($value);
@@ -291,6 +294,8 @@ class ServiceController extends Controller
             'valid' => $request->has('valid'),
             'is_add' => $request->has('is_add'),
             'arrangement_order' => $request->arrangement_order ?? 1,
+            'start_date' => $request->filled('start_date') ? Carbon::parse($request->start_date) : null,
+            'end_date' => $request->filled('end_date') ? Carbon::parse($request->end_date) : null,
             'parent_id' => $request->parent_id,
             'image_id' => $imageId,
 
@@ -437,6 +442,37 @@ class ServiceController extends Controller
             'success' => true,
             'message' => "Service has been {$status} successfully",
             'status' => $service->valid
+        ]);
+    }
+
+    /**
+     * Reset all ratings for a service
+     */
+    public function resetRatings(Service $service)
+    {
+        // Check if admin has access to this service's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($service->city_id, $accessibleCityIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify this service.'
+            ], 403);
+        }
+
+        $deletedCount = $service->rates()->count();
+
+        if ($deletedCount === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This service has no ratings to reset.'
+            ], 400);
+        }
+
+        $service->rates()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$deletedCount} rating(s) have been reset successfully."
         ]);
     }
 

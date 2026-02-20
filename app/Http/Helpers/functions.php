@@ -1,8 +1,7 @@
 <?php
 
 use App\Models\Media;
-use App\Models\UserSetting;
-use Google\Auth\Credentials\ServiceAccountCredentials;
+use App\Models\User;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -45,11 +44,11 @@ if (!function_exists('getCode')) {
 
 if (!function_exists('jsonPaginateResponse')) {
     function jsonPaginateResponse(string $resource, $data) {
-        
+
         if (!is_subclass_of($resource, JsonResource::class)) {
             throw new \InvalidArgumentException("The resource class must extend JsonResource.");
         }
-        
+
         $collection = $resource::collection($data);
 
         return response()->json([
@@ -99,13 +98,13 @@ if (!function_exists('resizeImage')) {
 
             // Calculate new dimensions while maintaining aspect ratio
             $newDimensionsArray = calculateNewDimensions(
-                $originalWidth, 
-                $originalHeight, 
-                $maxWidth, 
-                $maxHeight, 
+                $originalWidth,
+                $originalHeight,
+                $maxWidth,
+                $maxHeight,
                 $minDimension
             );
-            
+
             $newWidth = $newDimensionsArray['width'];
             $newHeight = $newDimensionsArray['height'];
 
@@ -120,29 +119,29 @@ if (!function_exists('resizeImage')) {
             $imagePath = $subfolder . DIRECTORY_SEPARATOR . $finalFilename;
             $finalPath = $destination . DIRECTORY_SEPARATOR . $finalFilename;
 
-
-            // Check if resize is actually needed
-            if ($originalWidth == $newWidth && $originalHeight == $newHeight) {
-                goto  insert;
-            }
-            
             // Ensure destination directory exists
             if (!file_exists($destination)) {
                 if (!mkdir($destination, 0755, true)) {
                     throw new Exception("Failed to create directory: {$destination}");
                 }
             }
-            // Resize and save the image
-            $img->resize($newWidth, $newHeight)->save($finalPath, $quality);
 
-            insert:
-                return insertToMedia($imagePath);
+            // Check if resize is actually needed
+            if ($originalWidth == $newWidth && $originalHeight == $newHeight) {
+                // No resize needed — copy original file to destination
+                $file->move($destination, $finalFilename);
+            } else {
+                // Resize and save the image
+                $img->resize($newWidth, $newHeight)->save($finalPath, $quality);
+            }
+
+            return insertToMedia($imagePath);
 
         } catch (Exception $e) {
             Log::error('Image resize failed: ' . $e->getMessage());
             return null;
         }
-        
+
     }
 }
 
@@ -154,12 +153,12 @@ if (!function_exists('deleteImage')) {
             if ($media) {
                 // Delete file from storage
                 Storage::disk('public')->delete($media->path);
-                
+
                 // Delete media record
                 $media->delete();
             }
         } catch (\Exception $e) {
-            Log::error('Deleing Image failed => ', [$e->getMessage()]);
+            Log::error('Deleting Image failed => ', [$e->getMessage()]);
         }
     }
 }
@@ -171,38 +170,27 @@ if (!function_exists('insertToMedia')) {
             if (empty($path)) {
                 return null;
             }
-            
+
             // Check if media already exists
             $existingMedia = Media::where('path', $path)->first();
             if ($existingMedia) {
                 return $existingMedia;
             }
-            
+
             return Media::create([
                 'path' => $path,
-                'type' => 'image', // Assuming it's always an image, adjust as needed
-                'size' => null, // Add file size if available
-                'mime_type' => null // Add mime type if available
+                'type' => 'image',
+                'size' => null,
+                'mime_type' => null
             ]);
-            
+
         } catch (\Exception $e) {
-            log::error('Failed to create media', [
+            Log::error('Failed to create media', [
                 'image_path' => $path,
                 'error' => $e->getMessage()
             ]);
             return null;
         }
-    }
-}
-
-if (!function_exists('deleteImage')) {
-    function deleteImage($id, $path) {
-        if (File::exists(public_path($path))) {
-            File::delete(public_path($path));
-
-            Media::where('id', $id)->delete();
-        }
-        return;
     }
 }
 
@@ -225,7 +213,7 @@ if (!function_exists('getFullImagePath')) {
         $imagePath = $model->image->path ?? $model->path;
 
         $path = $folder . DIRECTORY_SEPARATOR . $imagePath;
-        
+
         return ($model->image_id || $model->path ) ? url($path)  : null;
     }
 }
@@ -235,7 +223,7 @@ if (!function_exists('getImagePath')) {
         if (!$image) {
             return null;
         }
-        return env('APP_URL')."/$image";
+        return config('app.url')."/$image";
     }
 }
 
@@ -251,11 +239,14 @@ if (!function_exists('getUser')) {
 
 
 if (!function_exists('generateCode')) {
-    function generateCode($digits=5, $key='verification_code') {
-        $code = rand(pow(1, ($digits-1)), pow(10, $digits)-1);
+    function generateCode($digits = 5, $key = 'verification_code') {
+        $min = pow(10, ($digits - 1));
+        $max = pow(10, $digits) - 1;
+        $code = rand($min, $max);
         $exists = User::where($key, $code)->first();
-        if ($exists)
-            generateCode(key: $key);
+        if ($exists) {
+            return generateCode($digits, $key);
+        }
         return $code;
     }
 }
@@ -263,33 +254,32 @@ if (!function_exists('generateCode')) {
 
 if (!function_exists('sendSMS')) {
     function sendSMS($to, $message) {
-        $to = str_replace('+2','',$to);
+        $to = str_replace('+2', '', $to);
 
-        $url = "https://smsmisr.com/api/SMS/";
+        $smsConfig = config('services.sms');
 
-        $fields = "environment=1";
-        $fields .= "&sender=c0b702cf5f1ee9a9407d5819203870d63e3acc49c76786c1b4f6c88f39e411ef";
-        $fields .= "&username=66a17c01-4401-4f25-a0da-7465789671ad";
-        $fields .= "&password=4857598902b008b747afcfbb6ea5228914faa5b226b57a1ab02cc1fbc0575a43";
+        $url = $smsConfig['url'];
+
+        $fields = "environment=" . $smsConfig['environment'];
+        $fields .= "&sender=" . $smsConfig['sender'];
+        $fields .= "&username=" . $smsConfig['username'];
+        $fields .= "&password=" . $smsConfig['password'];
         $fields .= "&mobile=2$to";
         $fields .= "&language=2";
-        $fields .= "&message=$message";
-        
+        $fields .= "&message=" . urlencode($message);
+
 
         $ch = curl_init();
 
-        //set the url, number of POST vars, POST data
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-        curl_setopt($ch, CURLOPT_URL, sprintf($url));
-        curl_setopt($ch, CURLOPT_POST, 3);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
 
-        // execute post
         $result = curl_exec($ch);
         $result = json_decode($result);
 
-        // close connection
         curl_close($ch);
         return $result;
     }
@@ -308,7 +298,7 @@ if (!function_exists('getCurrentUser')) {
 
         return [
             'model' => $guards[$userGuard],
-            'data'  => Auth::guard($userGuard)->user() 
+            'data'  => Auth::guard($userGuard)->user()
         ];
     }
 }
@@ -319,7 +309,7 @@ if (!function_exists('getCurrentUser')) {
 if (!function_exists('resizeExistingImage')) {
     /**
      * Resize an existing image file
-     * 
+     *
      * @param string $filename - The filename of the image
      * @param string $sourcePath - Full path to source directory
      * @param string $destinationPath - Full path to destination directory (optional, will overwrite original if not provided)
@@ -331,7 +321,7 @@ if (!function_exists('resizeExistingImage')) {
      * @return array
      */
     function resizeExistingImage($filename, $sourcePath, $destinationPath = null, $maxWidth = 512, $maxHeight = 512, $minDimension = 100, $keepOriginalName = true, $quality = 85) {
-        
+
         $success = false;
         $originalDimensions = null;
         $newDimensions = null;
@@ -341,7 +331,7 @@ if (!function_exists('resizeExistingImage')) {
         try {
             // Build full file paths
             $sourceFilePath = $sourcePath . DIRECTORY_SEPARATOR . $filename;
-            
+
             // Check if source file exists
             if (!file_exists($sourceFilePath)) {
                 throw new Exception("Source file does not exist: {$sourceFilePath}");
@@ -361,10 +351,10 @@ if (!function_exists('resizeExistingImage')) {
 
             // Calculate new dimensions while maintaining aspect ratio
             $newDimensionsArray = calculateNewDimensions(
-                $originalWidth, 
-                $originalHeight, 
-                $maxWidth, 
-                $maxHeight, 
+                $originalWidth,
+                $originalHeight,
+                $maxWidth,
+                $maxHeight,
                 $minDimension
             );
 
@@ -428,7 +418,7 @@ if (!function_exists('resizeExistingImage')) {
 if (!function_exists('calculateNewDimensions')) {
     /**
      * Calculate new dimensions while maintaining aspect ratio
-     * 
+     *
      * @param int $originalWidth
      * @param int $originalHeight
      * @param int $maxWidth
@@ -442,7 +432,7 @@ if (!function_exists('calculateNewDimensions')) {
             $scaleFactor = 0.7; // Reduce to 70% of original size for small images
             $newWidth = max($minDimension, (int)($originalWidth * $scaleFactor));
             $newHeight = max($minDimension, (int)($originalHeight * $scaleFactor));
-            
+
             return ['width' => $newWidth, 'height' => $newHeight];
         }
 
@@ -461,7 +451,7 @@ if (!function_exists('calculateNewDimensions')) {
 if (!function_exists('resizeImageInPlace')) {
     /**
      * Resize image and replace the original file
-     * 
+     *
      * @param string $filePath - Full path to the image file
      * @param int $maxWidth
      * @param int $maxHeight
@@ -472,7 +462,7 @@ if (!function_exists('resizeImageInPlace')) {
     function resizeImageInPlace($filePath, $maxWidth = 512, $maxHeight = 512, $minDimension = 100, $quality = 85) {
         $filename = basename($filePath);
         $directory = dirname($filePath);
-        
+
         return resizeExistingImage($filename, $directory, $directory, $maxWidth, $maxHeight, $minDimension, true, $quality);
     }
 }
@@ -483,10 +473,8 @@ if (!function_exists('resizeImageInPlace')) {
 if (!function_exists('resizeImageSimple')) {
     function resizeImageSimple($file, $path, $maxDimension = 400) {
         try {
-            $imgManager = new ImageManager(
-                new Intervention\Image\Drivers\Gd\Driver()
-            );
-            
+            $imgManager = new ImageManager(new Driver());
+
             $img = $imgManager->read($file->getRealPath());
 
             // Get the original dimensions
@@ -513,12 +501,12 @@ if (!function_exists('resizeImageSimple')) {
             // Resize and save the image
             $img->resize($newWidth, $newHeight)
                 ->save($destination . '/' . $fileName, 85);
-            
+
             return "$path/$fileName";
 
         } catch (Exception $e) {
             Log::error('Image resize failed: ' . $e->getMessage());
-            return null; // or throw exception based on your error handling strategy
+            return null;
         }
     }
 }
@@ -527,17 +515,19 @@ if (!function_exists('resizeImageSimple')) {
 
 if (!function_exists('sendWhatsAppMessage')) {
     function sendWhatsAppMessage($to, $message) {
+        $whatsappConfig = config('services.whatsapp');
+
         $response = Http::withHeaders([
-            'apikey' => 'YOUR_GUPSHUP_API_KEY',
+            'apikey' => $whatsappConfig['api_key'],
         ])->post('https://api.gupshup.io/sm/api/v1/msg', [
             'channel' => 'whatsapp',
-            'source' => 'YOUR_REGISTERED_NUMBER',
-            'destination' => $to, // مثال: "2010xxxxxxx"
+            'source' => $whatsappConfig['source_number'],
+            'destination' => $to,
             'message' => json_encode([
                 'type' => 'text',
                 'text' => $message
             ]),
-            'src.name' => 'Future'
+            'src.name' => $whatsappConfig['app_name']
         ]);
         return $response->json();
     }

@@ -70,7 +70,7 @@ function FCMPush($cityID, $title, $body, $type, $extra = [])
     foreach ($extra as $k => $v) {
         $data[$k] = is_scalar($v) ? (string) $v : json_encode($v);
     }
-    
+
     /* $fields = [
         "message" => [
             "topic" => $config->firebase_topic,
@@ -143,7 +143,7 @@ function FCMPush($cityID, $title, $body, $type, $extra = [])
         CURLOPT_POSTFIELDS => json_encode($fields, JSON_UNESCAPED_UNICODE),
         // Don't disable SSL verification in production
     ]);
-    
+
     $result = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
@@ -175,59 +175,58 @@ function FCMPush($cityID, $title, $body, $type, $extra = [])
     ];
 }
 
+if (!function_exists('FCMPushNew')) {
+    function FCMPushNew($cityID, $title, $body, $type, $extra = [])
+    {
+        $config = getConfig($cityID);
 
-function FCMPushNew($cityID, $title, $body, $type, $extra = [])
-{
-    $config = getConfig($cityID);
-
-    if (!$config) {
-        Log::error('FCM Push: Config not found', ['cityID' => $cityID]);
-        return null;
-    }
-
-    if (!$config->firebase_topic) {
-        Log::error('FCM Push: Firebase topic not configured', ['cityID' => $cityID]);
-        return null;
-    }
-
-    // Firebase Project ID - update this or store in config
-    // $projectId = $config->firebase_project_id ?? 'dalel-75ad2';
-    $projectId = 'dalel-75ad2';
-    $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
-
-    try {
-        // Get Access Token (cached for performance)
-        $accessToken = getFirebaseAccessToken();
-
-        if (!$accessToken) {
-            Log::error('FCM Push: Failed to obtain access token');
+        if (!$config) {
+            Log::error('FCM Push: Config not found', ['cityID' => $cityID]);
             return null;
         }
 
-        // Build the message payload
-        $message = buildFCMMessage($config->firebase_topic, $title, $body, $type, $extra);
+        if (!$config->firebase_topic) {
+            Log::error('FCM Push: Firebase topic not configured', ['cityID' => $cityID]);
+            return null;
+        }
 
-        // Send the notification
-        $response = sendFCMRequest($url, $accessToken, $message);
+        $projectId = config('services.firebase.project_id', 'dalel-75ad2');
+        $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
-        Log::info('FCM Push notification sent', [
-            'cityID' => $cityID,
-            'topic' => $config->firebase_topic,
-            'title' => $title,
-            'type' => $type,
-            'success' => $response['success'] ?? false,
-        ]);
+        try {
+            // Get Access Token (cached for performance)
+            $accessToken = getFirebaseAccessToken();
 
-        return $response;
+            if (!$accessToken) {
+                Log::error('FCM Push: Failed to obtain access token');
+                return null;
+            }
 
-    } catch (\Exception $e) {
-        Log::error('FCM Push Exception', [
-            'cityID' => $cityID,
-            'title' => $title,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-        return null;
+            // Build the message payload
+            $message = buildFCMMessage($config->firebase_topic, $title, $body, $type, $extra);
+
+            // Send the notification
+            $response = sendFCMRequest($url, $accessToken, $message);
+
+            Log::info('FCM Push notification sent', [
+                'cityID' => $cityID,
+                'topic' => $config->firebase_topic,
+                'title' => $title,
+                'type' => $type,
+                'success' => $response['success'] ?? false,
+            ]);
+
+            return $response;
+
+        } catch (\Exception $e) {
+            Log::error('FCM Push Exception', [
+                'cityID' => $cityID,
+                'title' => $title,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return null;
+        }
     }
 }
 
@@ -238,11 +237,12 @@ function FCMPushNew($cityID, $title, $body, $type, $extra = [])
  * @return string|null
  * @throws \Exception
  */
+if (!function_exists('getFirebaseAccessToken')) {
 function getFirebaseAccessToken()
 {
     // Cache the token to avoid fetching on every request
     return Cache::remember('firebase_access_token', 3000, function () {
-        $credentialsPath = Storage::path('client_secret_google.json');
+        $credentialsPath = Storage::path(config('services.firebase.credentials_file', 'client_secret_google.json'));
 
         if (!file_exists($credentialsPath)) {
             throw new \Exception('Firebase credentials file not found at: ' . $credentialsPath);
@@ -260,6 +260,7 @@ function getFirebaseAccessToken()
         return $token['access_token'];
     });
 }
+}
 
 /**
  * Build FCM Message Payload optimized for Mobile Apps (Android & iOS)
@@ -271,6 +272,7 @@ function getFirebaseAccessToken()
  * @param array $extra
  * @return array
  */
+if (!function_exists('buildFCMMessage')) {
 function buildFCMMessage($topic, $title, $body, $type, $extra = [])
 {
     // Prepare data payload - all values must be strings for FCM
@@ -320,7 +322,7 @@ function buildFCMMessage($topic, $title, $body, $type, $extra = [])
                     'notification_count' => 1,
                 ],
             ],
-            
+
 
             // iOS (APNs) specific configuration for real-time delivery
             'apns' => [
@@ -355,8 +357,9 @@ function buildFCMMessage($topic, $title, $body, $type, $extra = [])
         $dataPayload['image'] = $imageUrl;
         $message['message']['data'] = $dataPayload;
     }
-    
+
     return $message;
+}
 }
 
 /**
@@ -368,6 +371,7 @@ function buildFCMMessage($topic, $title, $body, $type, $extra = [])
  * @return array
  * @throws \Exception
  */
+if (!function_exists('sendFCMRequest')) {
 function sendFCMRequest($url, $accessToken, $message)
 {
     $headers = [
@@ -417,6 +421,7 @@ function sendFCMRequest($url, $accessToken, $message)
         'message_id' => $response['name'] ?? null,
     ];
 }
+}
 
 /**
  * Send FCM Push to specific device token instead of topic
@@ -429,6 +434,7 @@ function sendFCMRequest($url, $accessToken, $message)
  * @param string|null $projectId
  * @return array|null
  */
+if (!function_exists('FCMPushToDevice')) {
 function FCMPushToDevice($deviceToken, $title, $body, $type, $extra = [], $projectId = null)
 {
     $projectId = $projectId ?? config('services.firebase.project_id', 'dalel-75ad2');
@@ -462,6 +468,7 @@ function FCMPushToDevice($deviceToken, $title, $body, $type, $extra = [], $proje
         return null;
     }
 }
+}
 
 /**
  * Build FCM Message for specific device token
@@ -473,6 +480,7 @@ function FCMPushToDevice($deviceToken, $title, $body, $type, $extra = [], $proje
  * @param array $extra
  * @return array
  */
+if (!function_exists('buildFCMMessageForDevice')) {
 function buildFCMMessageForDevice($deviceToken, $title, $body, $type, $extra = [])
 {
     $message = buildFCMMessage('', $title, $body, $type, $extra);
@@ -482,6 +490,7 @@ function buildFCMMessageForDevice($deviceToken, $title, $body, $type, $extra = [
     $message['message']['token'] = $deviceToken;
 
     return $message;
+}
 }
 
 /**
@@ -494,6 +503,7 @@ function buildFCMMessageForDevice($deviceToken, $title, $body, $type, $extra = [
  * @param array $extra
  * @return array
  */
+if (!function_exists('FCMPushToMultipleDevices')) {
 function FCMPushToMultipleDevices($deviceTokens, $title, $body, $type, $extra = [])
 {
     $results = [
@@ -519,6 +529,7 @@ function FCMPushToMultipleDevices($deviceTokens, $title, $body, $type, $extra = 
 
     return $results;
 }
+}
 
 /**
  * Clear cached Firebase access token
@@ -526,9 +537,11 @@ function FCMPushToMultipleDevices($deviceTokens, $title, $body, $type, $extra = 
  *
  * @return bool
  */
+if (!function_exists('clearFirebaseTokenCache')) {
 function clearFirebaseTokenCache()
 {
     return Cache::forget('firebase_access_token');
+}
 }
 
 /**
@@ -536,9 +549,10 @@ function clearFirebaseTokenCache()
  *
  * @return array
  */
+if (!function_exists('validateFirebaseCredentials')) {
 function validateFirebaseCredentials()
 {
-    $credentialsPath = Storage::path('client_secret_google.json');
+    $credentialsPath = Storage::path(config('services.firebase.credentials_file', 'client_secret_google.json'));
 
     $result = [
         'valid' => false,
@@ -580,4 +594,5 @@ function validateFirebaseCredentials()
     $result['valid'] = true;
 
     return $result;
+}
 }

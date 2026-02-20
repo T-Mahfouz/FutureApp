@@ -24,6 +24,93 @@
 			</a>
 		</div>
 
+		<!-- Search and Filters -->
+		<div class="card mb-4">
+			<div class="card-header d-flex justify-content-between align-items-center">
+				<h6 class="mb-0">Search & Filters</h6>
+				<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#filterSection" aria-expanded="true" aria-controls="filterSection">
+					<i class="gd-angle-down"></i> Collapse
+				</button>
+			</div>
+			<div class="collapse show" id="filterSection">
+				<div class="card-body">
+					<form method="GET" action="{{ route('user.index') }}">
+						<div class="row">
+							<div class="col-lg-4 col-md-6 mb-3">
+								<label for="search" class="form-label">Search Users</label>
+								<div class="position-relative">
+									<input type="text" class="form-control pr-5" id="search" name="search" value="{{ request('search') }}" placeholder="Search by name, email, phone...">
+									<div class="position-absolute" style="right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+										<i class="gd-search text-muted"></i>
+									</div>
+								</div>
+							</div>
+							<div class="col-lg-3 col-md-4 mb-3">
+								<label for="city_id" class="form-label">City</label>
+								<select class="form-control" id="city_id" name="city_id">
+									<option value="">All Cities</option>
+									@foreach($cities as $city)
+										<option value="{{ $city->id }}" {{ request('city_id') == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
+									@endforeach
+								</select>
+							</div>
+							<div class="col-lg-2 col-md-4 mb-3">
+								<label for="sort_by" class="form-label">Sort By</label>
+								<select class="form-control" id="sort_by" name="sort_by">
+									<option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>Registration Date</option>
+									<option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
+									<option value="email" {{ request('sort_by') == 'email' ? 'selected' : '' }}>Email</option>
+								</select>
+							</div>
+							<div class="col-lg-1 col-md-2 mb-3 d-flex align-items-end">
+								<button type="submit" class="btn btn-primary btn-block">
+									<i class="gd-search"></i>
+								</button>
+							</div>
+							<div class="col-lg-2 col-md-2 mb-3 d-flex align-items-end">
+								<a href="{{ route('user.index') }}" class="btn btn-outline-secondary btn-block">
+									<i class="gd-reload"></i> Clear
+								</a>
+							</div>
+						</div>
+
+						@if(request()->hasAny(['search', 'city_id']))
+						<div class="border-top pt-3">
+							<small class="text-muted">Active filters:</small>
+							<div class="mt-2">
+								@if(request('search'))
+									<span class="badge badge-primary mr-1 mb-1">Search: "{{ request('search') }}"</span>
+								@endif
+								@if(request('city_id'))
+									<span class="badge badge-info mr-1 mb-1">City: {{ $cities->find(request('city_id'))->name ?? 'Unknown' }}</span>
+								@endif
+							</div>
+						</div>
+						@endif
+					</form>
+				</div>
+			</div>
+		</div>
+		<!-- End Search and Filters -->
+
+		<!-- Results Info -->
+		<div class="d-flex justify-content-between align-items-center mb-3">
+			<div>
+				<small class="text-muted">
+					Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} results
+					@if(request()->hasAny(['search', 'city_id']))
+						<span class="badge badge-info ml-1">Filtered</span>
+					@endif
+				</small>
+			</div>
+			@if(request()->hasAny(['search', 'city_id']))
+			<div>
+				<a href="{{ route('user.index') }}" class="btn btn-sm btn-outline-secondary">
+					<i class="gd-close"></i> Clear All Filters
+				</a>
+			</div>
+			@endif
+		</div>
 
 		<!-- Users -->
 		<div class="table-responsive-xl">

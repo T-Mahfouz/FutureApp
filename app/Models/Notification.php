@@ -6,7 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'title',
+        'body',
+        'image_id',
+        'service_id',
+        'news_id',
+        'type',
+        'sent_at',
+    ];
 
     public function service()
     {

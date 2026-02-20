@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'name',
+        'city_id',
+        'parent_id',
+        'image_id',
+        'active',
+    ];
 
     public function city()
     {

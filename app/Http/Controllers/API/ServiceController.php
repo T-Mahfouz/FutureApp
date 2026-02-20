@@ -6,14 +6,11 @@ use App\Http\Requests\API\RateRequest;
 use App\Http\Requests\API\UserServiceRequest;
 use App\Http\Resources\API\ServiceResource;
 use App\Models\Service;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class ServiceController extends InitController
 {
-    use ApiResponse;
-
     public function __construct()
     {
         parent::__construct();
@@ -34,13 +31,8 @@ class ServiceController extends InitController
         
         $services = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
-            ->where(function($query) { 
-                $query->where('is_request', false) // Admin created services (no approval needed)
-                    ->orWhere(function($subQuery) {
-                        $subQuery->where('is_request', true)
-                                ->whereNotNull('approved_at'); // User requests must be approved
-                    });
-            })
+            ->published()
+            ->notExpired()
             ->with(['image'])
             ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('created_at', 'desc')
@@ -50,7 +42,6 @@ class ServiceController extends InitController
         $data = ServiceResource::collection($services);
 
         return jsonResponse(200, 'done.', $data);
-        // return $this->successResponse($data, 'Data retrieved successfully');
     }
 
     /**
@@ -63,22 +54,17 @@ class ServiceController extends InitController
     {
         $services = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
-            ->where(function($query) { 
-                $query->where('is_request', false) // Admin created services (no approval needed)
-                    ->orWhere(function($subQuery) {
-                        $subQuery->where('is_request', true)
-                                ->whereNotNull('approved_at'); // User requests must be approved
-                    });
-            })
+            ->published()
+            ->notExpired()
             ->with(['image', 'categories'])
             ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->orderBy('arrangement_order', 'asc')
             ->orderBy('name', 'asc')
             ->get();
-        
+
         $data = ServiceResource::collection($services);
 
-        return jsonResponse(200, 'Data retrieved successfully', $data);
+        return jsonResponse(200, 'done.', $data);
     }
 
     /**
@@ -92,13 +78,8 @@ class ServiceController extends InitController
     {
         $services = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
-            ->where(function($query) { 
-                $query->where('is_request', false) // Admin created services (no approval needed)
-                    ->orWhere(function($subQuery) {
-                        $subQuery->where('is_request', true)
-                                ->whereNotNull('approved_at'); // User requests must be approved
-                    });
-            })
+            ->published()
+            ->notExpired()
             ->whereHas('categories', function($query) use ($categoryId) {
                 $query->where('category_id', $categoryId);
             })
@@ -107,11 +88,10 @@ class ServiceController extends InitController
             ->orderBy('arrangement_order', 'asc')
             ->orderBy('name', 'asc')
             ->get();
-        
+
         $data = ServiceResource::collection($services);
 
         return jsonResponse(200, 'done.', $data);
-        // return $this->successResponse($data, 'Data retrieved successfully');
     }
 
     /**
@@ -125,26 +105,19 @@ class ServiceController extends InitController
     {
         $service = $this->pipeline->where('city_id', $this->user->city_id)
             ->where('valid', 1)
-            ->where(function($query) { 
-                $query->where('is_request', false) // Admin created services (no approval needed)
-                    ->orWhere(function($subQuery) {
-                        $subQuery->where('is_request', true)
-                                ->whereNotNull('approved_at'); // User requests must be approved
-                    });
-            })
+            ->published()
+            ->notExpired()
             ->with(['image', 'images', 'categories', 'phones', 'rates'])
             ->selectRaw('services.*, EXISTS(SELECT 1 FROM favorites WHERE favorites.service_id = services.id AND favorites.user_id = ?) as is_favorite', [$this->user->id])
             ->find($id);
-        
+
         if (!$service) {
             return jsonResponse(404, 'Service not found.');
-            // return $this->notFoundResponse('Item not found');
         }
-        
+
         $data = new ServiceResource($service);
 
         return jsonResponse(200, 'done.', $data);
-        // return $this->successResponse($data, 'Data retrieved successfully');
     }
 
 

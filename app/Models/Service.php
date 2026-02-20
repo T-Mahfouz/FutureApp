@@ -31,6 +31,8 @@ class Service extends Model
         'is_request',
         'is_add',
         'arrangement_order',
+        'start_date',
+        'end_date',
         'requested_at',
         'approved_at',
         'approved_by',
@@ -43,6 +45,8 @@ class Service extends Model
         'valid' => 'boolean',
         'is_request' => 'boolean',
         'is_add' => 'boolean',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
         'requested_at' => 'datetime',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
@@ -208,6 +212,58 @@ class Service extends Model
         return $query->where('is_request', false);
     }
 
+    /**
+     * Scope to get publicly visible services (admin-created or approved user requests)
+     */
+    public function scopePublished($query)
+    {
+        return $query->where(function($q) {
+            $q->where('is_request', false)
+                ->orWhere(function($sub) {
+                    $sub->where('is_request', true)
+                        ->whereNotNull('approved_at');
+                });
+        });
+    }
+
+    /**
+     * Scope to filter out expired services and services that haven't started yet
+     */
+    public function scopeNotExpired($query)
+    {
+        return $query->where(function($q) {
+            $q->whereNull('start_date')
+              ->orWhere('start_date', '<=', now());
+        })->where(function($q) {
+            $q->whereNull('end_date')
+              ->orWhere('end_date', '>', now());
+        });
+    }
+
+    /**
+     * Check if service has started (no start_date means always started)
+     */
+    public function hasStarted()
+    {
+        return !$this->start_date || $this->start_date->isPast();
+    }
+
+    /**
+     * Check if service has expired (no end_date means never expires)
+     */
+    public function isExpired()
+    {
+        return $this->end_date && $this->end_date->isPast();
+    }
+
+    /**
+     * Check if service is currently within its active date range
+     */
+    public function isWithinDateRange()
+    {
+        return $this->hasStarted() && !$this->isExpired();
+    }
+
     // Actions
     public function approve($adminId = null)
     {
@@ -239,7 +295,7 @@ class Service extends Model
         if (!$this->is_request) 
             return null;
         
-        if (!$this->approved_at & !$this->rejected_at) {
+        if (!$this->approved_at && !$this->rejected_at) {
             return 'Pending';
         }
         else if ($this->approved_at != null) {

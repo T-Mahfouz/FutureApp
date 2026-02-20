@@ -9,6 +9,7 @@ use App\Models\Service;
 use App\Models\News;
 use App\Models\Media;
 use App\Models\City;
+use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -22,12 +23,12 @@ class NotificationController extends Controller
     {
         $admin = Auth::guard('admin')->user();
         $adminCities = $admin->cities();
-        
+
         // If admin has no city assignments, they can access all cities (super admin)
         if ($adminCities->count() == 0) {
             return City::pluck('id')->toArray();
         }
-        
+
         // Otherwise, return only assigned cities
         return $adminCities->pluck('cities.id')->toArray();
     }
@@ -38,7 +39,7 @@ class NotificationController extends Controller
     private function applyCityRestriction($query)
     {
         $accessibleCityIds = $this->getAccessibleCityIds();
-        
+
         // Filter notifications that are assigned to accessible cities
         return $query->whereHas('cities', function($cityQuery) use ($accessibleCityIds) {
             $cityQuery->whereIn('cities.id', $accessibleCityIds);
@@ -49,10 +50,10 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $query = Notification::with(['service.city', 'news.city', 'image', 'cities']);
-        
+
         // Apply city restriction based on admin's assigned cities
         $query = $this->applyCityRestriction($query);
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->get('search');
@@ -70,7 +71,7 @@ class NotificationController extends Controller
                   });
             });
         }
-        
+
         // Filter by notification type
         if ($request->filled('type')) {
             switch ($request->get('type')) {
@@ -82,7 +83,7 @@ class NotificationController extends Controller
                     break;
             }
         }
-        
+
         // Filter by city
         if ($request->filled('city_id')) {
             $accessibleCityIds = $this->getAccessibleCityIds();
@@ -93,33 +94,33 @@ class NotificationController extends Controller
                 });
             }
         }
-        
+
         // Date range filter
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->get('date_from'));
         }
-        
+
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->get('date_to'));
         }
-        
+
         // Sorting
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        
+
         $allowedSorts = ['title', 'created_at', 'updated_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
         } else {
             $query->latest();
         }
-        
+
         $notifications = $query->paginate(25)->withQueryString();
-        
+
         // Get filter options - only cities admin has access to
         $accessibleCityIds = $this->getAccessibleCityIds();
         $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
-        
+
         return view('notification.index', compact('notifications', 'cities'));
     }
 
@@ -127,21 +128,22 @@ class NotificationController extends Controller
     public function create()
     {
         $notification = new Notification();
-        
+
         // Only show services and news from accessible cities
         $accessibleCityIds = $this->getAccessibleCityIds();
-        
+
         $services = Service::whereIn('city_id', $accessibleCityIds)
                           ->orderBy('name')
                           ->get();
-        
+
         $news = News::whereIn('city_id', $accessibleCityIds)
                    ->orderBy('name')
                    ->get();
 
         $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
+        $categories = Category::whereIn('city_id', $accessibleCityIds)->orderBy('name')->get();
 
-        return view('notification.edit', compact('notification', 'services', 'news', 'cities'));
+        return view('notification.edit', compact('notification', 'services', 'news', 'cities', 'categories'));
     }
 
     // Show the form for editing the specified notification
@@ -150,10 +152,10 @@ class NotificationController extends Controller
         // Check if admin has access to this notification
         $accessibleCityIds = $this->getAccessibleCityIds();
         $notificationCityIds = $notification->cities->pluck('id')->toArray();
-        
+
         // Admin must have access to at least one of the notification's cities
         $hasAccess = !empty(array_intersect($accessibleCityIds, $notificationCityIds));
-        
+
         if (!$hasAccess) {
             abort(403, 'You do not have permission to edit this notification.');
         }
@@ -162,14 +164,15 @@ class NotificationController extends Controller
         $services = Service::whereIn('city_id', $accessibleCityIds)
                           ->orderBy('name')
                           ->get();
-        
+
         $news = News::whereIn('city_id', $accessibleCityIds)
                    ->orderBy('name')
                    ->get();
-        
-        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
 
-        return view('notification.edit', compact('notification', 'cities', 'services', 'news'));
+        $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
+        $categories = Category::whereIn('city_id', $accessibleCityIds)->orderBy('name')->get();
+
+        return view('notification.edit', compact('notification', 'cities', 'services', 'news', 'categories'));
     }
 
     // Save a newly created notification
@@ -186,9 +189,9 @@ class NotificationController extends Controller
         if ($notification->exists) {
             $accessibleCityIds = $this->getAccessibleCityIds();
             $notificationCityIds = $notification->cities->pluck('id')->toArray();
-            
+
             $hasAccess = !empty(array_intersect($accessibleCityIds, $notificationCityIds));
-            
+
             if (!$hasAccess) {
                 abort(403, 'You do not have permission to edit this notification.');
             }
@@ -247,11 +250,11 @@ class NotificationController extends Controller
         $imageId = $notification->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            
+
             $media = resizeImage($image, $this->storagePath);
-            
+
             $imageId = $media->id ?? null;
-            
+
             // Delete old image if exists
             if($imageId && $notification->image_id && $notification->image){
                 Storage::disk('public')->delete($notification->image->path);
@@ -284,9 +287,9 @@ class NotificationController extends Controller
         // Check if admin has access to this notification
         $accessibleCityIds = $this->getAccessibleCityIds();
         $notificationCityIds = $notification->cities->pluck('id')->toArray();
-        
+
         $hasAccess = !empty(array_intersect($accessibleCityIds, $notificationCityIds));
-        
+
         if (!$hasAccess) {
             abort(403, 'You do not have permission to view this notification.');
         }
@@ -301,9 +304,9 @@ class NotificationController extends Controller
         // Check if admin has access to this notification
         $accessibleCityIds = $this->getAccessibleCityIds();
         $notificationCityIds = $notification->cities->pluck('id')->toArray();
-        
+
         $hasAccess = !empty(array_intersect($accessibleCityIds, $notificationCityIds));
-        
+
         if (!$hasAccess) {
             abort(403, 'You do not have permission to delete this notification.');
         }
@@ -315,7 +318,7 @@ class NotificationController extends Controller
         }
 
         $notification->delete();
-        
+
         return redirect()
             ->route('notification.index')
             ->with('status', 'Notification has been deleted successfully');
@@ -326,17 +329,17 @@ class NotificationController extends Controller
     {
         // Only show services and news from accessible cities
         $accessibleCityIds = $this->getAccessibleCityIds();
-        
+
         $services = Service::whereIn('city_id', $accessibleCityIds)
                           ->orderBy('name')
                           ->get();
-        
+
         $news = News::whereIn('city_id', $accessibleCityIds)
                    ->orderBy('name')
                    ->get();
-        
+
         $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
-        
+
         return view('notification.firebase', compact('services', 'news', 'cities'));
     }
 
@@ -378,7 +381,7 @@ class NotificationController extends Controller
 
         // Here you would implement the actual Firebase sending logic
         // For now, we'll just simulate success
-        
+
         return redirect()
             ->route('notification.send-firebase')
             ->with('status', 'Firebase notification has been sent successfully');
@@ -386,7 +389,7 @@ class NotificationController extends Controller
 
     /**
      * Send a single notification via Firebase
-     * 
+     *
      * @param Notification $notification
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -395,9 +398,9 @@ class NotificationController extends Controller
         // Check if admin has access to this notification
         $accessibleCityIds = $this->getAccessibleCityIds();
         $notificationCityIds = $notification->cities->pluck('id')->toArray();
-        
+
         $hasAccess = !empty(array_intersect($accessibleCityIds, $notificationCityIds));
-        
+
         if (!$hasAccess) {
             abort(403, 'You do not have permission to send this notification.');
         }
@@ -488,7 +491,7 @@ class NotificationController extends Controller
 
     /**
      * Send a single notification via Firebase (AJAX)
-     * 
+     *
      * @param Notification $notification
      * @return \Illuminate\Http\JsonResponse
      */
@@ -497,9 +500,9 @@ class NotificationController extends Controller
         // Check if admin has access to this notification
         $accessibleCityIds = $this->getAccessibleCityIds();
         $notificationCityIds = $notification->cities->pluck('id')->toArray();
-        
+
         $hasAccess = !empty(array_intersect($accessibleCityIds, $notificationCityIds));
-        
+
         if (!$hasAccess) {
             return response()->json([
                 'success' => false,
@@ -584,10 +587,10 @@ class NotificationController extends Controller
 
         return response()->json([
             'success' => $successCount > 0,
-            'message' => $successCount === $totalCities 
-                ? "Notification sent successfully to all {$totalCities} cities" 
-                : ($successCount > 0 
-                    ? "Notification sent to {$successCount}/{$totalCities} cities" 
+            'message' => $successCount === $totalCities
+                ? "Notification sent successfully to all {$totalCities} cities"
+                : ($successCount > 0
+                    ? "Notification sent to {$successCount}/{$totalCities} cities"
                     : "Failed to send notification"),
             'results' => $results,
             'summary' => [
@@ -717,31 +720,39 @@ class NotificationController extends Controller
     public function getServicesByCities(Request $request)
     {
         $cityIds = $request->input('city_ids', []);
-        
+
         if (empty($cityIds)) {
             return response()->json([
                 'success' => true,
                 'services' => []
             ]);
         }
-        
+
         // Ensure it's an array
         if (!is_array($cityIds)) {
             $cityIds = [$cityIds];
         }
-        
+
         // Apply city restriction based on admin's access
         $accessibleCityIds = $this->getAccessibleCityIds();
-        
+
         // Only get services from cities the admin has access to
         $allowedCityIds = array_intersect($cityIds, $accessibleCityIds);
-        
+
         // Get services from the selected cities
-        $services = Service::whereIn('city_id', $allowedCityIds)
+        $query = Service::whereIn('city_id', $allowedCityIds)
             ->where('valid', 1) // Only active services
             ->with('city')
-            ->orderBy('name')
-            ->get()
+            ->orderBy('name');
+
+        // Filter by category if provided
+        if ($request->filled('category_id')) {
+            $query->whereHas('categories', function($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+
+        $services = $query->get()
             ->map(function($service) {
                 return [
                     'id' => $service->id,
@@ -749,7 +760,7 @@ class NotificationController extends Controller
                     'city_name' => $service->city ? $service->city->name : 'N/A',
                 ];
             });
-        
+
         return response()->json([
             'success' => true,
             'services' => $services
@@ -762,25 +773,25 @@ class NotificationController extends Controller
     public function getNewsByCities(Request $request)
     {
         $cityIds = $request->input('city_ids', []);
-        
+
         if (empty($cityIds)) {
             return response()->json([
                 'success' => true,
                 'news' => []
             ]);
         }
-        
+
         // Ensure it's an array
         if (!is_array($cityIds)) {
             $cityIds = [$cityIds];
         }
-        
+
         // Apply city restriction based on admin's access
         $accessibleCityIds = $this->getAccessibleCityIds();
-        
+
         // Only get news from cities the admin has access to
         $allowedCityIds = array_intersect($cityIds, $accessibleCityIds);
-        
+
         // Get news from the selected cities
         $news = News::whereIn('city_id', $allowedCityIds)
                 ->with('city')
@@ -793,7 +804,7 @@ class NotificationController extends Controller
                         'city_name' => $newsItem->city ? $newsItem->city->name : 'N/A',
                     ];
                 });
-        
+
         return response()->json([
             'success' => true,
             'news' => $news

@@ -122,7 +122,17 @@
 
 				<!-- Service Selection (Hidden by default) -->
 				<div class="form-row" id="service_selection" style="display: none;">
-					<div class="form-group col-12">
+					<div class="form-group col-12 col-md-4">
+						<label for="category_filter">Filter by Category</label>
+						<select class="form-control" id="category_filter">
+							<option value="">All Categories</option>
+							@foreach($categories as $category)
+								<option value="{{ $category->id }}">{{ $category->name }}</option>
+							@endforeach
+						</select>
+						<small class="form-text text-muted">Filter services by category (optional)</small>
+					</div>
+					<div class="form-group col-12 col-md-8">
 						<label for="service_id">Select Service</label>
 						<select class="form-control{{ $errors->has('service_id') ? ' is-invalid' : '' }}" id="service_id" name="service_id">
 							<option value="">Select cities first</option>
@@ -174,15 +184,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	function toggleSelections() {
 		const contentType = contentTypeSelect.value;
-		
+		const categoryFilter = document.getElementById('category_filter');
+
 		// Hide all selections first
 		serviceSelection.style.display = 'none';
 		newsSelection.style.display = 'none';
-		
+
 		// Clear selections
 		serviceSelect.value = '';
 		newsSelect.value = '';
-		
+
+		// Reset category filter when switching content types
+		if (categoryFilter) {
+			categoryFilter.value = '';
+		}
+
 		// Show relevant selection based on content type
 		switch(contentType) {
 			case 'service':
@@ -209,6 +225,7 @@ $(document).ready(function() {
     const citySelect = $('#city_ids');
     const serviceSelect = $('#service_id');
     const newsSelect = $('#news_id');
+    const categoryFilter = $('#category_filter');
     const currentServiceId = {{ old('service_id', $notification->service_id) ?? 'null' }};
     const currentNewsId = {{ old('news_id', $notification->news_id) ?? 'null' }};
 
@@ -220,9 +237,12 @@ $(document).ready(function() {
     // Handle city change
     citySelect.on('change', function() {
         const cityIds = $(this).val();
-        
+
         console.log('Cities changed to:', cityIds);
-        
+
+        // Reset category filter when cities change
+        categoryFilter.val('');
+
         if (!cityIds || cityIds.length === 0) {
             serviceSelect.html('<option value="">Select cities first</option>');
             newsSelect.html('<option value="">Select cities first</option>');
@@ -234,10 +254,18 @@ $(document).ready(function() {
         loadServicesAndNews(cityIds);
     });
 
+    // Handle category filter change
+    categoryFilter.on('change', function() {
+        const cityIds = citySelect.val();
+        if (cityIds && cityIds.length > 0) {
+            loadServices(cityIds);
+        }
+    });
+
     function loadServicesAndNews(cityIds) {
         // Load services
         loadServices(cityIds);
-        
+
         // Load news
         loadNews(cityIds);
     }
@@ -248,15 +276,19 @@ $(document).ready(function() {
         serviceSelect.html('<option value="">Loading services...</option>');
 
         const url = '{{ route("notification.getServicesByCities") }}';
-        
-        console.log('Fetching services from:', url);
+        const categoryId = categoryFilter.val();
+
+        console.log('Fetching services from:', url, 'category:', categoryId);
+
+        const requestData = { city_ids: cityIds };
+        if (categoryId) {
+            requestData.category_id = categoryId;
+        }
 
         $.ajax({
             url: url,
             method: 'GET',
-            data: {
-                city_ids: cityIds
-            },
+            data: requestData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'

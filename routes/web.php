@@ -84,6 +84,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::patch('/services/{service}', [ServiceController::class, 'update'])->name('service.update');
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
+    Route::post('/services/{service}/reset-ratings', [ServiceController::class, 'resetRatings'])->name('service.reset-ratings');
 
     Route::post('/services/bulk-destroy', [ServiceController::class, 'bulkDestroy'])->name('service.bulk-destroy');
     Route::post('/services/bulk-toggle-status', [ServiceController::class, 'bulkToggleStatus'])->name('service.bulk-toggle-status');
@@ -181,7 +182,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
 });
 
 
-Route::get('cache/clear-all', function (Request $request) {
+Route::middleware('auth:admin')->get('cache/clear-all', function (Request $request) {
     try {
         // Clear application cache
         Cache::flush();

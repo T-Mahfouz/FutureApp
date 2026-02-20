@@ -5,9 +5,10 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\API\InitController;
 use App\Http\Requests\API\User\AuthRequest;
 use App\Http\Requests\API\Users\Auth\ChangePasswordRequest;
-use App\Http\Requests\API\Users\Auth\ResetPasswordRequest;
 use App\Http\Resources\API\AuthResource;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -28,10 +29,20 @@ class AuthController extends InitController
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return jsonResponse(401, 'Wrong phone or password!');
         }
-        
+
         $user = Auth::guard('api')->user();
+
+        // Block unverified users from logging in
+        if (!$user->is_verified) {
+            Auth::guard('api')->logout();
+
+            return jsonResponse(403, 'Your account is not verified. Please verify your phone number first.', [
+                'is_verified' => false,
+                'phone' => $user->phone,
+            ]);
+        }
+
         $user->access_token = $token;
-        
 
         $data = new AuthResource($user);
 
@@ -42,157 +53,205 @@ class AuthController extends InitController
     {
         DB::beginTransaction();
         try {
-            $data = $request->only(['email','name','city_id','phone']);
-            
-            if($request->hasFile('image')) {
+            $data = $request->only(['email', 'name', 'city_id', 'phone']);
 
+            if ($request->hasFile('image')) {
                 $image = $request->file('image');
-
-                $media = resizeImage($image, $this->storagePath, 'all_images'.DIRECTORY_SEPARATOR.'users');
-            
+                $media = resizeImage($image, $this->storagePath, 'all_images' . DIRECTORY_SEPARATOR . 'users');
                 $imageId = $media->id ?? null;
-                
                 $data['image_id'] = $imageId;
             }
 
             $data['password'] = Hash::make($request->password);
+            $data['is_verified'] = false;
+
             $user = $this->pipeline->setModel('User')->create($data);
             $user->access_token = auth()->guard('api')->tokenById($user->id);
 
+            DB::commit();
+
+            // Send OTP after successful registration
+            $lang = $request->header('Accept-Language', 'en');
+            sendOtp($user->phone, $user->name ?? '', $lang);
+
             $data = new AuthResource($user);
 
-            DB::commit();
+            return jsonResponse(201, 'Registration successful. Please verify your phone number.', $data);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return jsonResponse($e->getCode(), $e->getMessage());
         }
-        
-        return jsonResponse(201, 'done.', $data);
     }
 
-    public function sendVerificationCode(Request $request)
+    /**
+     * Verify phone number using OTP code.
+     * Used after registration to activate the account.
+     */
+    public function verify(Request $request)
     {
-        $user = Auth::guard('api')->user();
-        
+        $request->validate([
+            'phone' => 'required|string',
+            'otp' => 'required|string|size:4',
+        ]);
+
         $phone = $request->phone;
-        
-        $user = $this->pipeline->setModel('User')->where(['phone' => $phone])->first();
-        if (!$user) {
-            return jsonResponse(404, 'not found.');
-        }
+        $otp = $request->otp;
 
-        if ($user->settings->verified) {
-            return jsonResponse(404, 'already verified!');
-        }
+        $user = User::where('phone', $phone)->first();
 
-        //TODO: sendSMS($phone, "Your AROUND code is: $user->activation_code");
-        
-        return jsonResponse(200, 'done.');
-    }
-    
-    public function forgetPasswordRequest(Request $request)
-    {
-        $user = Auth::guard('api')->user();
-        
-        $phone = $request->phone;
-        
-        $code = generateCode(key: 'change_password_code');
-
-        $user = $this->pipeline->setModel('User')
-            ->where('phone', $phone)
-            ->first();
-        
         if (!$user) {
             return jsonResponse(404, 'User not found.');
         }
 
-        $userSetting = $this->pipeline->setModel('UserSetting')
-            ->where(['model_name' => 'User','model_id' => $user->id])
-            ->first();
-
-        if (!$userSetting) {
-            return jsonResponse(404, 'something went wrong, please contact with the technical support.');
+        if ($user->is_verified) {
+            return jsonResponse(400, 'Account is already verified.');
         }
 
-        $userSetting->update(['change_password_code' => $code]);
-        //TODO: sendSMS($phone, "Use : $user->activation_code");
-        
-        return jsonResponse(200, 'done.');
+        // Verify OTP against cached value
+        $cacheKey = 'otp_code_' . $phone;
+        $cachedOtp = Cache::get($cacheKey);
+
+        if (!$cachedOtp || $cachedOtp !== $otp) {
+            return jsonResponse(400, 'Invalid or expired verification code.');
+        }
+
+        // Mark user as verified
+        $user->is_verified = true;
+        $user->save();
+
+        // Clear the OTP from cache
+        Cache::forget($cacheKey);
+
+        // Generate token for auto-login after verification
+        $user->access_token = auth()->guard('api')->tokenById($user->id);
+
+        $data = new AuthResource($user);
+
+        return jsonResponse(200, 'Phone number verified successfully.', $data);
     }
-    
-    public function verify(Request $request)
-    {
-        $data = $request->only(['phone', 'verification_code']);
 
-        $user = $this->pipeline->setModel('User')
-            ->select(['users.*','us.verification_code','us.model_id'])
-            ->leftJoin('user_settings as us', function($sql) use($data){
-                return $sql->on('users.id','=','us.model_id');
-            })
-            ->where([
-                'us.verification_code' => $data['verification_code'],
-                'us.model_name' => 'User'
-            ])
-            ->where('phone', $data['phone'])
-            ->first();
-            
+    /**
+     * Resend OTP for phone verification.
+     * Can be used after registration or before login.
+     */
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+        ]);
+
+        $phone = $request->phone;
+
+        $user = User::where('phone', $phone)->first();
+
         if (!$user) {
-            return jsonResponse(404, 'not found.');
+            return jsonResponse(404, 'User not found.');
         }
 
-        $this->pipeline->setModel('UserSetting')
-            ->update(['verified' => 1,'verification_code' => null], ['model_id' => $user->id, 'model_name' => 'User']);
+        if ($user->is_verified) {
+            return jsonResponse(400, 'Account is already verified.');
+        }
 
-        return jsonResponse(201, 'done.');
+        $lang = $request->header('Accept-Language', 'en');
+        $otpResult = sendOtp($phone, $user->name ?? '', $lang);
+
+        if (!$otpResult['success']) {
+            return jsonResponse(429, $otpResult['message']);
+        }
+
+        return jsonResponse(200, 'Verification code sent successfully.');
+    }
+
+    /**
+     * Forgot password - send OTP to phone number.
+     * Public endpoint, no auth required.
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+        ]);
+
+        $phone = $request->phone;
+
+        $user = User::where('phone', $phone)->first();
+
+        if (!$user) {
+            return jsonResponse(404, 'User not found.');
+        }
+
+        if (!$user->is_verified) {
+            return jsonResponse(403, 'Account is not verified. Please verify your phone number first.');
+        }
+
+        $lang = $request->header('Accept-Language', 'en');
+        $otpResult = sendOtp($phone, $user->name ?? '', $lang);
+
+        if (!$otpResult['success']) {
+            return jsonResponse(429, $otpResult['message']);
+        }
+
+        return jsonResponse(200, 'Password reset code sent successfully.');
+    }
+
+    /**
+     * Reset password using OTP code.
+     * Verifies the OTP, resets password, and returns a login token.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'otp' => 'required|string|size:4',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $phone = $request->phone;
+        $otp = $request->otp;
+
+        $user = User::where('phone', $phone)->first();
+
+        if (!$user) {
+            return jsonResponse(404, 'User not found.');
+        }
+
+        // Verify OTP against cached value
+        $cacheKey = 'otp_code_' . $phone;
+        $cachedOtp = Cache::get($cacheKey);
+
+        if (!$cachedOtp || $cachedOtp !== $otp) {
+            return jsonResponse(400, 'Invalid or expired verification code.');
+        }
+
+        // Reset password
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Clear the OTP from cache
+        Cache::forget($cacheKey);
+
+        // Auto-login after password reset
+        $user->access_token = auth()->guard('api')->tokenById($user->id);
+
+        $data = new AuthResource($user);
+
+        return jsonResponse(200, 'Password reset successfully.', $data);
     }
 
     public function changePassword(ChangePasswordRequest $request)
     {
         $password = $request->password;
         $oldPassword = $request->old_password;
-        
+
         $user = Auth::guard('api')->user();
-        
+
         if (!$user || !Hash::check($oldPassword, $user->password)) {
             return jsonResponse(400, 'Invalid password!');
         }
 
-        $user->password = $password;
+        $user->password = Hash::make($password);
         $user->save();
-
-        $data = new AuthResource($user);
-
-        return jsonResponse(201, 'done.', $data);
-    }
-
-    public function resetWithLogin(ResetPasswordRequest $request)
-    {
-        $password = $request->password;
-        $phone = $request->phone;
-        $code = $request->code;
-        
-        $user = $this->pipeline->setModel('User')
-            ->select(['users.*','us.verification_code','us.model_id'])
-            ->leftJoin('user_settings as us', function($sql) use($code){
-                return $sql->on('users.id','=','us.model_id');
-            })
-            ->where([
-                'us.change_password_code' => $code,
-                'us.model_name' => 'User'
-            ])
-            ->where('users.phone', $phone)
-            ->first();
-        
-        if (!$user) {
-            return jsonResponse(404, 'check your code!');
-        }
-
-        $user->password = $password;
-        $user->save();
-
-        $this->pipeline->setModel('UserSetting')
-            ->update(['change_password_code' => null], ['model_id' => $user->id, 'model_name' => 'User']);
 
         $data = new AuthResource($user);
 
