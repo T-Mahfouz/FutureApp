@@ -493,18 +493,34 @@
 		@endif
 
 		<!-- Recent Favorites -->
-		@if($service->favorites && $service->favorites->count() > 0)
+		@if($favorites->total() > 0)
 		<div class="card">
 			<div class="card-header">
-				<h5 class="mb-0">Recent Favorites ({{ $service->favorites->count() }} total)</h5>
+				<h5 class="mb-0">Recent Favorites ({{ $favorites->total() }} total)</h5>
 			</div>
 			<div class="card-body">
-				@foreach($service->favorites()->with('user')->latest()->take(5)->get() as $favorite)
-				<div class="d-flex align-items-center justify-content-between mb-2">
-					<strong>{{ $favorite->user->name ?? 'Anonymous' }}</strong>
-					<small class="text-muted">{{ $favorite->created_at->diffForHumans() }}</small>
+				@foreach($favorites as $favorite)
+				<div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+					@if($favorite->user && $favorite->user->image && $favorite->user->image->path)
+						<img src="{{ asset('storage/' . $favorite->user->image->path) }}" alt="{{ $favorite->user->name }}" class="rounded-circle mr-3" width="48" height="48" style="object-fit: cover;">
+					@else
+						<div class="rounded-circle mr-3 bg-light d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+							<i class="gd-user text-muted"></i>
+						</div>
+					@endif
+					<div>
+						<strong>{{ $favorite->user->name ?? 'Anonymous' }}</strong>
+						@if($favorite->user && $favorite->user->phone)
+							<div class="text-muted small">{{ $favorite->user->phone }}</div>
+						@endif
+						<small class="text-muted">{{ $favorite->created_at->format('M d, Y \a\t g:i:s A') }}</small>
+					</div>
 				</div>
 				@endforeach
+
+				<div class="d-flex justify-content-center mt-3">
+					{{ $favorites->links() }}
+				</div>
 			</div>
 		</div>
 		@endif

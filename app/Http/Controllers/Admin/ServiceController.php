@@ -377,7 +377,7 @@ class ServiceController extends Controller
 
         $service->load([
             'city', 'image', 'categories', 'images', 'phones',
-            'parentService', 'subServices', 'favorites.user'
+            'parentService', 'subServices'
         ]);
 
         $ratings = $service->rates()
@@ -386,7 +386,13 @@ class ServiceController extends Controller
             ->paginate(15, ['*'], 'ratings_page')
             ->withQueryString();
 
-        return view('service.show', compact('service', 'ratings'));
+        $favorites = $service->favorites()
+            ->with(['user.image'])
+            ->latest()
+            ->paginate(15, ['*'], 'favorites_page')
+            ->withQueryString();
+
+        return view('service.show', compact('service', 'ratings', 'favorites'));
     }
 
     public function destroy(Service $service)
