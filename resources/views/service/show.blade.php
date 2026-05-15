@@ -446,10 +446,10 @@
 		@endif
 
 		<!-- Recent Ratings -->
-		@if($service->rates && $service->rates->count() > 0)
+		@if($ratings->total() > 0)
 		<div class="card mb-4">
 			<div class="card-header d-flex justify-content-between align-items-center">
-				<h5 class="mb-0">Recent Ratings ({{ $service->rates->count() }} total)</h5>
+				<h5 class="mb-0">Recent Ratings ({{ $ratings->total() }} total)</h5>
 				<div class="d-flex align-items-center">
 					<small class="text-muted mr-3">Average: {{ number_format($service->averageRating(), 1) }} ★</small>
 					<button type="button" class="btn btn-danger btn-sm" onclick="resetRatings({{ $service->id }})">
@@ -458,11 +458,23 @@
 				</div>
 			</div>
 			<div class="card-body">
-				@foreach($service->rates()->with('user')->latest()->take(10)->get() as $rate)
-				<div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
-					<div>
-						<strong>{{ $rate->user->name ?? 'Anonymous' }}</strong>
-						<small class="text-muted ml-2">{{ $rate->created_at->diffForHumans() }}</small>
+				@foreach($ratings as $rate)
+				<div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+					<div class="d-flex align-items-center">
+						@if($rate->user && $rate->user->image && $rate->user->image->path)
+							<img src="{{ asset('storage/' . $rate->user->image->path) }}" alt="{{ $rate->user->name }}" class="rounded-circle mr-3" width="48" height="48" style="object-fit: cover;">
+						@else
+							<div class="rounded-circle mr-3 bg-light d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+								<i class="gd-user text-muted"></i>
+							</div>
+						@endif
+						<div>
+							<strong>{{ $rate->user->name ?? 'Anonymous' }}</strong>
+							@if($rate->user && $rate->user->phone)
+								<div class="text-muted small">{{ $rate->user->phone }}</div>
+							@endif
+							<small class="text-muted">{{ $rate->created_at->format('M d, Y \a\t g:i:s A') }}</small>
+						</div>
 					</div>
 					<div class="text-warning">
 						@for($i = 1; $i <= 5; $i++)
@@ -472,6 +484,10 @@
 					</div>
 				</div>
 				@endforeach
+
+				<div class="d-flex justify-content-center mt-3">
+					{{ $ratings->links() }}
+				</div>
 			</div>
 		</div>
 		@endif
