@@ -10,8 +10,8 @@ class Service extends Model
     use HasFactory;
 
     protected $fillable = [
-        'city_id', 
-        'image_id', 
+        'city_id',
+        'image_id',
         'user_id',
         'name',
         'parent_id',
@@ -112,7 +112,7 @@ class Service extends Model
     {
         return $this->hasMany(Rate::class);
     }
-    
+
     public function subServices()
     {
         return $this->hasMany(Service::class, 'parent_id');
@@ -292,9 +292,9 @@ class Service extends Model
 
     private function requestStatus()
     {
-        if (!$this->is_request) 
+        if (!$this->is_request)
             return null;
-        
+
         if (!$this->approved_at && !$this->rejected_at) {
             return 'Pending';
         }

@@ -8,7 +8,6 @@ use App\Http\Requests\API\Users\Auth\ChangePasswordRequest;
 use App\Http\Resources\API\AuthResource;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -108,20 +107,21 @@ class AuthController extends InitController
             return jsonResponse(400, 'Account is already verified.');
         }
 
-        // Verify OTP against cached value
-        $cacheKey = 'otp_code_' . $phone;
-        $cachedOtp = Cache::get($cacheKey);
-
-        if (!$cachedOtp || $cachedOtp !== $otp) {
+        // Verify OTP against database value
+        if (!$user->otp_code || !$user->otp_expires_at || now()->greaterThan($user->otp_expires_at)) {
             return jsonResponse(400, 'Invalid or expired verification code.');
         }
 
-        // Mark user as verified
-        $user->is_verified = true;
-        $user->save();
+        if ($user->otp_code !== $otp) {
+            return jsonResponse(400, 'Invalid or expired verification code.');
+        }
 
-        // Clear the OTP from cache
-        Cache::forget($cacheKey);
+        // Mark user as verified and clear OTP
+        $user->update([
+            'is_verified' => true,
+            'otp_code' => null,
+            'otp_expires_at' => null,
+        ]);
 
         // Generate token for auto-login after verification
         $user->access_token = auth()->guard('api')->tokenById($user->id);
@@ -216,20 +216,21 @@ class AuthController extends InitController
             return jsonResponse(404, 'User not found.');
         }
 
-        // Verify OTP against cached value
-        $cacheKey = 'otp_code_' . $phone;
-        $cachedOtp = Cache::get($cacheKey);
-
-        if (!$cachedOtp || $cachedOtp !== $otp) {
+        // Verify OTP against database value
+        if (!$user->otp_code || !$user->otp_expires_at || now()->greaterThan($user->otp_expires_at)) {
             return jsonResponse(400, 'Invalid or expired verification code.');
         }
 
-        // Reset password
-        $user->password = Hash::make($request->password);
-        $user->save();
+        if ($user->otp_code !== $otp) {
+            return jsonResponse(400, 'Invalid or expired verification code.');
+        }
 
-        // Clear the OTP from cache
-        Cache::forget($cacheKey);
+        // Reset password and clear OTP
+        $user->update([
+            'password' => Hash::make($request->password),
+            'otp_code' => null,
+            'otp_expires_at' => null,
+        ]);
 
         // Auto-login after password reset
         $user->access_token = auth()->guard('api')->tokenById($user->id);

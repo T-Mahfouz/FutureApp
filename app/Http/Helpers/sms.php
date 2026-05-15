@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 if (!function_exists('sendOtp')) {
     /**
@@ -15,12 +15,20 @@ if (!function_exists('sendOtp')) {
      */
     function sendOtp(string $phone, string $name = '', string $lang = 'en'): array
     {
-        // Throttle: allow re-sending only after 1 minute
-        $cacheKey = 'otp_throttle_' . $phone;
+        // Throttle: allow re-sending only after 1 minute using DB timestamp
+        $user = User::where('phone', $phone)->first();
 
-        if (Cache::has($cacheKey)) {
-            $remainingSeconds = Cache::get($cacheKey) - now()->timestamp;
-            $remainingSeconds = max($remainingSeconds, 0);
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'User not found.',
+                'data' => null,
+            ];
+        }
+
+        if ($user->otp_expires_at && now()->diffInSeconds($user->otp_expires_at, false) > 240) {
+            $remainingSeconds = 60 - (300 - now()->diffInSeconds($user->otp_expires_at, false));
+            $remainingSeconds = ceil(max($remainingSeconds, 0));
 
             return [
                 'success' => false,
@@ -53,15 +61,14 @@ if (!function_exists('sendOtp')) {
             ]);
 
             if ($response->successful()) {
-                // Set throttle: store expiry timestamp for 60 seconds
-                Cache::put($cacheKey, now()->addSeconds(60)->timestamp, 60);
-
-                // Store OTP code in cache for verification (expires in 5 minutes)
                 $responseData = $response->json();
                 $otpCode = $responseData['otp'] ?? $responseData['data']['otp'] ?? $responseData['code'] ?? null;
 
                 if ($otpCode) {
-                    Cache::put('otp_code_' . $phone, (string) $otpCode, 300);
+                    $user->update([
+                        'otp_code' => (string) $otpCode,
+                        'otp_expires_at' => now()->addSeconds(300),
+                    ]);
                 }
 
                 return [

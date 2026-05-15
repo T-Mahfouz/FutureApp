@@ -21,6 +21,8 @@ class User extends Authenticatable implements JWTSubject
         'city_id',
         'image_id',
         'is_verified',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     /**
@@ -31,6 +33,8 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     public function favorites()
@@ -73,6 +77,7 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_verified' => 'boolean',
+            'otp_expires_at' => 'datetime',
         ];
     }
 

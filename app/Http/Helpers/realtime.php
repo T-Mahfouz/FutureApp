@@ -64,6 +64,7 @@ function FCMPush($cityID, $title, $body, $type, $extra = [])
         "body"       => (string) $body,
         "image"      => isset($extra['image']) ? (string) $extra['image'] : "",
         "service_id" => isset($extra['service_id']) ? (string) $extra['service_id'] : "0",
+        "city_id" => (string) $cityID ?? "0",
     ];
 
     // Add the rest of $extra as strings (optional)
