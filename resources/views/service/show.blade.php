@@ -128,6 +128,55 @@
 			</div>
 		</div>
 
+		<!-- Service Date Range -->
+		@if($service->start_date || $service->end_date)
+		<div class="card mb-4">
+			<div class="card-header">
+				<h5 class="mb-0">Service Schedule</h5>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<div class="col-md-6">
+						<strong>Start Date:</strong>
+						<p class="text-muted">
+							@if($service->start_date)
+								{{ $service->start_date->format('M d, Y \a\t g:i A') }}
+								<br><small>{{ $service->start_date->diffForHumans() }}</small>
+							@else
+								<span class="font-italic">No start date (available immediately)</span>
+							@endif
+						</p>
+					</div>
+					<div class="col-md-6">
+						<strong>End Date:</strong>
+						<p class="text-muted">
+							@if($service->end_date)
+								{{ $service->end_date->format('M d, Y \a\t g:i A') }}
+								<br><small>{{ $service->end_date->diffForHumans() }}</small>
+								@if($service->isExpired())
+									<span class="badge badge-danger mt-1">Expired</span>
+								@else
+									<span class="badge badge-warning mt-1">Will Expire</span>
+								@endif
+							@else
+								<span class="font-italic">No end date (never expires)</span>
+							@endif
+						</p>
+					</div>
+				</div>
+				@if(!$service->hasStarted())
+					<div class="alert alert-info mb-0">
+						<i class="gd-info-circle mr-1"></i> This service has not started yet. It will become visible on {{ $service->start_date->format('M d, Y \a\t g:i A') }}.
+					</div>
+				@elseif($service->isExpired())
+					<div class="alert alert-danger mb-0">
+						<i class="gd-alert mr-1"></i> This service has expired and is no longer visible in the API.
+					</div>
+				@endif
+			</div>
+		</div>
+		@endif
+
 		@if($service->is_request)
 			<div class="card mb-4">
 				<div class="card-header">
@@ -401,7 +450,12 @@
 		<div class="card mb-4">
 			<div class="card-header d-flex justify-content-between align-items-center">
 				<h5 class="mb-0">Recent Ratings ({{ $service->rates->count() }} total)</h5>
-				<small class="text-muted">Average: {{ number_format($service->averageRating(), 1) }} ★</small>
+				<div class="d-flex align-items-center">
+					<small class="text-muted mr-3">Average: {{ number_format($service->averageRating(), 1) }} ★</small>
+					<button type="button" class="btn btn-danger btn-sm" onclick="resetRatings({{ $service->id }})">
+						<i class="gd-trash"></i> Reset Ratings
+					</button>
+				</div>
 			</div>
 			<div class="card-body">
 				@foreach($service->rates()->with('user')->latest()->take(10)->get() as $rate)
@@ -467,6 +521,38 @@ function approveService(serviceId) {
 			},
 			error: function(xhr, status, error) {
 				alert('Error approving service');
+			}
+		});
+    }
+}
+
+function resetRatings(serviceId) {
+    if(confirm('Are you sure you want to reset all ratings for this service? This action cannot be undone.')) {
+
+		let url = `{{ url('') }}/services/${serviceId}/reset-ratings`;
+
+		$.ajax({
+			url: url,
+			type: 'POST',
+			headers: {
+				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+			},
+			contentType: 'application/json',
+			dataType: 'json',
+			success: function(data) {
+				if(data.success) {
+					alert(data.message);
+					location.reload();
+				} else {
+					alert(data.message || 'Error resetting ratings');
+				}
+			},
+			error: function(xhr, status, error) {
+				let message = 'Error resetting ratings';
+				if(xhr.responseJSON && xhr.responseJSON.message) {
+					message = xhr.responseJSON.message;
+				}
+				alert(message);
 			}
 		});
     }

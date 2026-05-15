@@ -2,13 +2,14 @@
 
 namespace App\Exceptions;
 
-use Exception;
-use Request;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Request;
 use Throwable;
 
-class CustomHandler extends Exception
+class CustomHandler extends ExceptionHandler
 {
-    public function render(Request $request, Throwable $exception)
+    public function render($request, Throwable $exception)
     {
         if ($exception instanceof ThrottleRequestsException) {
             return response()->json([

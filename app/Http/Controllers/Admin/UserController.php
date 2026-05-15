@@ -12,10 +12,38 @@ class UserController extends Controller
 {
 	
 	// Show all users
-    public function index()
+    public function index(Request $request)
     {
-		$users = User::with(['city', 'image'])->paginate(25); // NEW: Include image relationship
-		return view('user.index', compact('users'));
+		$query = User::with(['city', 'image']);
+
+		// Search by name, email, or phone
+		if ($request->filled('search')) {
+			$search = $request->search;
+			$query->where(function($q) use ($search) {
+				$q->where('name', 'like', '%' . $search . '%')
+				  ->orWhere('email', 'like', '%' . $search . '%')
+				  ->orWhere('phone', 'like', '%' . $search . '%');
+			});
+		}
+
+		// Filter by city
+		if ($request->filled('city_id')) {
+			$query->where('city_id', $request->city_id);
+		}
+
+		// Sorting
+		$sortBy = $request->get('sort_by', 'created_at');
+		$sortDirection = $request->get('sort_direction', 'desc');
+
+		$allowedSorts = ['name', 'email', 'created_at'];
+		if (in_array($sortBy, $allowedSorts)) {
+			$query->orderBy($sortBy, $sortDirection);
+		}
+
+		$users = $query->paginate(25)->appends($request->query());
+		$cities = City::orderBy('name')->get();
+
+		return view('user.index', compact('users', 'cities'));
     }
 	
 	// Show the form to create new user
@@ -114,7 +142,9 @@ class UserController extends Controller
 
         // NEW: Delete user image if exists
         if($user->image){
-            Storage::disk('public')->delete($user->image->path);
+            if (!empty($user->image->path)) {
+                Storage::disk('public')->delete($user->image->path);
+            }
             $user->image->delete();
         }
 		

@@ -13,8 +13,17 @@ class User extends Authenticatable implements JWTSubject
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
     
-    // protected $guarded = [];
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'city_id',
+        'image_id',
+        'is_verified',
+        'otp_code',
+        'otp_expires_at',
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -24,6 +33,8 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     public function favorites()
@@ -65,6 +76,8 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_verified' => 'boolean',
+            'otp_expires_at' => 'datetime',
         ];
     }
 

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\Country;
 use App\Pipelines\Pipeline;
 use App\Http\Controllers\Controller;
-use GeoIP;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class InitController extends Controller
 {

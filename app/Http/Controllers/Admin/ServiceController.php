@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ServiceImage;
 use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\City;
@@ -10,6 +11,7 @@ use App\Models\Category;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ServiceController extends Controller
 {
@@ -231,6 +233,8 @@ class ServiceController extends Controller
             'valid' => 'boolean',
             'is_add' => 'boolean',
             'arrangement_order' => 'nullable|integer|min:1',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
             'parent_id' => ['nullable', 'exists:services,id', function ($attribute, $value, $fail) use ($accessibleCityIds) {
                 if ($value) {
                     $parentService = Service::find($value);
@@ -290,6 +294,8 @@ class ServiceController extends Controller
             'valid' => $request->has('valid'),
             'is_add' => $request->has('is_add'),
             'arrangement_order' => $request->arrangement_order ?? 1,
+            'start_date' => $request->filled('start_date') ? Carbon::parse($request->start_date) : null,
+            'end_date' => $request->filled('end_date') ? Carbon::parse($request->end_date) : null,
             'parent_id' => $request->parent_id,
             'image_id' => $imageId,
 
@@ -439,6 +445,37 @@ class ServiceController extends Controller
         ]);
     }
 
+    /**
+     * Reset all ratings for a service
+     */
+    public function resetRatings(Service $service)
+    {
+        // Check if admin has access to this service's city
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($service->city_id, $accessibleCityIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify this service.'
+            ], 403);
+        }
+
+        $deletedCount = $service->rates()->count();
+
+        if ($deletedCount === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This service has no ratings to reset.'
+            ], 400);
+        }
+
+        $service->rates()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$deletedCount} rating(s) have been reset successfully."
+        ]);
+    }
+
     // Bulk operations for future use
     public function bulkDestroy(Request $request)
     {
@@ -533,6 +570,49 @@ class ServiceController extends Controller
     }
 
 
+    public function destroyImage($id)
+    {
+        \DB::beginTransaction();
+        try {
+            $image = ServiceImage::find($id);
+            if (!$image) {
+                return response()->json([
+                    'message' => 'Image not found'
+                ], 404);
+            }
+            
+            // Get the news to check city access
+            $news = $image->news;
+            if ($news) {
+                $accessibleCityIds = $this->getAccessibleCityIds();
+                if (!in_array($news->city_id, $accessibleCityIds)) {
+                    return response()->json([
+                        'message' => 'You do not have permission to delete this image.'
+                    ], 403);
+                }
+            }
+            
+            $media = Media::find($image->image_id);
+
+            if ($media) {
+                Storage::disk('public')->delete($media->path);
+                $media->delete(); // Also delete the media record
+            }
+            
+            $image->delete();
+            \DB::commit();
+            
+            return response()->json([
+                'message' => 'Image has been deleted successfully'
+            ]);
+            
+        } catch (\Exception $ex) {
+            \DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete image: ' . $ex->getMessage()
+            ], 500);
+        }
+    }
 
 
     /* ================== Requested Services Management =========================== */
@@ -714,5 +794,40 @@ class ServiceController extends Controller
         }
 
         return redirect()->route('service.requests')->with('status', $message);
+    }
+
+
+    public function getParentServicesByCityId(Request $request)
+    {
+        $query = Service::query();
+        
+        // Filter by city
+        if ($request->has('city_id') && $request->city_id) {
+            $query->where('city_id', $request->city_id);
+        }
+        
+        // Only get parent services (services without a parent)
+        $query->whereNull('parent_id');
+        
+        // Exclude specific service (to prevent selecting itself as parent)
+        if ($request->has('exclude_id') && $request->exclude_id) {
+            $query->where('id', '!=', $request->exclude_id);
+        }
+        
+        // Apply city restriction based on admin's access
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $query->whereIn('city_id', $accessibleCityIds);
+        
+        // Only show active services
+        $query->where('valid', 1);
+        
+        // Get services
+        $services = $query->orderBy('name')
+                        ->get(['id', 'name']);
+        
+        return response()->json([
+            'success' => true,
+            'services' => $services
+        ]);
     }
 }

@@ -55,7 +55,8 @@
 										<label for="location">Location <span class="text-danger">*</span></label>
 										<select class="form-control{{ $errors->has('location') ? ' is-invalid' : '' }}" id="location" name="location" required>
 											<option value="">Select Location</option>
-											<option value="home" {{ old('location', $ad->location) == 'home' ? 'selected' : '' }}>Home</option>
+											<option value="home_up" {{ old('location', $ad->location) == 'home_up' ? 'selected' : '' }}>Home Up</option>
+											<option value="home_down" {{ old('location', $ad->location) == 'home_down' ? 'selected' : '' }}>Home Down</option>
 											<option value="category_profile" {{ old('location', $ad->location) == 'category_profile' ? 'selected' : '' }}>Category Profile</option>
 											<option value="service_profile" {{ old('location', $ad->location) == 'service_profile' ? 'selected' : '' }}>Service Profile</option>
 											<option value="all_locations" {{ old('location', $ad->location) == 'all_locations' ? 'selected' : '' }}>All Locations</option>

@@ -76,11 +76,15 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/services', [ServiceController::class, 'index'])->name('service.index');
     Route::get('/services/create', [ServiceController::class, 'create'])->name('service.create');
     Route::post('/services/create', [ServiceController::class, 'store'])->name('service.store');
+
+    Route::get('/services/ajax/parent-by-city', [ServiceController::class, 'getParentServicesByCityId'])->name('service.getParentServicesByCityId');
+
     Route::get('/services/{service}', [ServiceController::class, 'show'])->name('service.show');
     Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('service.edit');
     Route::patch('/services/{service}', [ServiceController::class, 'update'])->name('service.update');
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
+    Route::post('/services/{service}/reset-ratings', [ServiceController::class, 'resetRatings'])->name('service.reset-ratings');
 
     Route::post('/services/bulk-destroy', [ServiceController::class, 'bulkDestroy'])->name('service.bulk-destroy');
     Route::post('/services/bulk-toggle-status', [ServiceController::class, 'bulkToggleStatus'])->name('service.bulk-toggle-status');
@@ -92,6 +96,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/services/{service}/reject', [ServiceController::class, 'reject'])->name('service.reject');
     Route::post('/services/bulk-action', [ServiceController::class, 'bulkAction'])->name('service.bulk-action');
 
+    Route::delete('/services/images/{id}', [ServiceController::class, 'destroyImage'])->name('services.image.destroy');
     
     // News
     Route::get('/news', [NewsController::class, 'index'])->name('news.index');
@@ -107,6 +112,9 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/categories', [CategoryController::class, 'index'])->name('category.index');
     Route::get('/categories/create', [CategoryController::class, 'create'])->name('category.create');
     Route::post('/categories/create', [CategoryController::class, 'store'])->name('category.store');
+
+    Route::get('/categories/ajax/children-by-ids', [CategoryController::class, 'getChildrenByIds'])->name('category.getChildrenByIds');
+
     Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('category.show');
     Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('category.edit');
     Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('category.update');
@@ -114,6 +122,8 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::delete('/categories/bulk-delete/{category}', [CategoryController::class, 'bulkDestroy'])->name('category.bulk-destroy');
     
+    Route::get('/categories/ajax/by-city', [CategoryController::class, 'getByCityId'])->name('category.getByCityId');
+
     Route::get('/ads', [AdController::class, 'index'])->name('ad.index');
     Route::post('/ads/bulk-action', [AdController::class, 'bulkAction'])->name('ad.bulk-action');
     Route::get('/ads/create', [AdController::class, 'create'])->name('ad.create');
@@ -135,6 +145,14 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::get('/notifications/send-firebase', [NotificationController::class, 'sendFirebase'])->name('notification.send-firebase');
     Route::post('/notifications/send-firebase', [NotificationController::class, 'processFirebase'])->name('notification.send-firebase-post');
     Route::post('/notifications/bulk-action', [NotificationController::class, 'bulkAction'])->name('notification.bulk-action');
+    
+    Route::get('/notifications/ajax/services-by-cities', [NotificationController::class, 'getServicesByCities'])->name('notification.getServicesByCities');
+    Route::get('/notifications/ajax/news-by-cities', [NotificationController::class, 'getNewsByCities'])->name('notification.getNewsByCities');
+    
+    // NEW: Send single notification routes
+    Route::post('/notifications/{notification}/send', [NotificationController::class, 'sendSingleNotification'])->name('notification.send');
+    Route::post('/notifications/{notification}/send-ajax', [NotificationController::class, 'sendSingleNotificationAjax'])->name('notification.send-ajax');
+
     Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notification.show');
     Route::get('/notifications/{notification}/edit', [NotificationController::class, 'edit'])->name('notification.edit');
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notification.update');
@@ -164,7 +182,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
 });
 
 
-Route::get('cache/clear-all', function (Request $request) {
+Route::middleware('auth:admin')->get('cache/clear-all', function (Request $request) {
     try {
         // Clear application cache
         Cache::flush();

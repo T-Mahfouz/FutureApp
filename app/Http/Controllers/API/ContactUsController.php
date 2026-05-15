@@ -113,9 +113,9 @@ class ContactUsController extends InitController
 
     /**
      * Send anonymous contact message (for non-authenticated users)
-     * Note: This would need to be in a separate route without auth middleware
-     * 
-     * @param Request $request
+     * This route is registered outside the auth middleware group
+     *
+     * @param ContactUsRequest $request
      * @return JsonResponse
      */
     public function sendAnonymousMessage(ContactUsRequest $request): JsonResponse
@@ -128,7 +128,7 @@ class ContactUsController extends InitController
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'message' => $request->message,
-                'city_id' => $this->user->city_id,
+                'city_id' => $request->city_id,
                 'user_id' => null, // Anonymous
                 'is_read' => false,
             ]);

@@ -18,6 +18,7 @@ class ServiceResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'brief_description' => $this->brief_description,
+            'is_favorite' => $this->is_favorite,
             'description' => $this->when($request->routeIs('*.show') || $request->has('detailed'), $this->description ?? ''),
             'address' => $this->when($request->routeIs('*.show') || $request->has('detailed'), $this->address ?? ''),
             'lat' => $this->when($request->routeIs('*.show') || $request->has('detailed'), $this->lat ?? ''),
@@ -32,8 +33,10 @@ class ServiceResource extends JsonResource
             'image' => $this->whenLoaded('image', function () {
                 return getFullImagePath($this);
             }),
-            'images' => $this->images->map(function($image) {
-                return getFullImagePath($image);
+            'images' => $this->whenLoaded('images', function() {
+                return $this->images->map(function($image) {
+                    return getFullImagePath($image);
+                });
             }),
             'categories' => CategoryResource::collection($this->whenLoaded('categories')),
             'phones' => $this->whenLoaded('phones', function() {
@@ -44,19 +47,16 @@ class ServiceResource extends JsonResource
                     ];
                 });
             }),
-            'average_rating' => $this->whenLoaded('rates', function() {
-                return round($this->averageRating(), 1);
-            }),
-            'ratings_count' => $this->whenLoaded('rates', function() {
-                return $this->rates->count();
-            }),
-
+            'average_rating' => round($this->averageRating(), 1),
+            'ratings_count' => $this->rates->count() ?? 0,
             'is_request' => (bool)$this->is_request,
             'status' => $this->status, // uses the status attribute from model
             'requested_at' => $this->requested_at,
             'approved_at' => $this->approved_at,
             'rejection_reason' => $this->rejection_reason,
 
+            'start_date' => $this->start_date?->toDateTimeString(),
+            'end_date' => $this->end_date?->toDateTimeString(),
             'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }

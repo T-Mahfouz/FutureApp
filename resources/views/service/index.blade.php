@@ -155,7 +155,7 @@
 										@endif
 										@if(request('service_type'))
 											<span class="badge badge-warning mr-1 mb-1">
-												Type: 
+												Type:
 												@if(request('service_type') == 'main')
 													Main Services
 												@elseif(request('service_type') == 'sub')
@@ -245,10 +245,10 @@
 					<td class="py-3">{{ $service->id }}</td>
 					<td class="py-3">
 						@if($service->image)
-							<img src="{{ asset('storage/' . $service->image->path) }}" alt="{{ $service->name }}" 
+							<img src="{{ asset('storage/' . $service->image->path) }}" alt="{{ $service->name }}"
 								 class="rounded" width="40" height="40">
 						@else
-							<span class="avatar-placeholder bg-secondary text-white rounded d-inline-flex align-items-center justify-content-center" 
+							<span class="avatar-placeholder bg-secondary text-white rounded d-inline-flex align-items-center justify-content-center"
 								  style="width: 40px; height: 40px;">
 								{{ substr($service->name, 0, 1) }}
 							</span>
@@ -311,8 +311,13 @@
 							<button class="btn btn-link link-dark p-0 mr-2" onclick="toggleStatus({{ $service->id }})" title="Toggle Status">
 								<i class="gd-reload icon-text"></i>
 							</button>
-							<a class="link-dark d-inline-block" href="#" 
-							   onclick="if(confirm('Delete this service? This action cannot be undone.')){document.getElementById('delete-entity-{{ $service->id }}').submit();return false;}" 
+{{--							@if($service->rates_count > 0)--}}
+							<button class="btn btn-link text-danger p-0 mr-2" onclick="resetRatings({{ $service->id }})" title="Reset Ratings ({{ $service->rates_count }})">
+								<i class="gd-star icon-text"></i>
+							</button>
+{{--							@endif--}}
+							<a class="link-dark d-inline-block" href="#"
+							   onclick="if(confirm('Delete this service? This action cannot be undone.')){document.getElementById('delete-entity-{{ $service->id }}').submit();return false;}"
 							   title="Delete">
 								<i class="gd-trash icon-text"></i>
 							</a>
@@ -339,7 +344,7 @@
 				@endforelse
 				</tbody>
 			</table>
-			
+
 			{{ $services->links('components.pagination') }}
 		</div>
 		<!-- End Services -->
@@ -347,6 +352,29 @@
 </div>
 
 <script>
+function resetRatings(serviceId) {
+    if(confirm('Are you sure you want to reset all ratings for this service? This action cannot be undone.')) {
+        fetch(`/services/${serviceId}/reset-ratings`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error resetting ratings');
+            }
+        })
+        .catch(error => {
+            alert('Error resetting ratings');
+        });
+    }
+}
+
 function toggleStatus(serviceId) {
     if(confirm('Are you sure you want to toggle the status of this service?')) {
         fetch(`/services/${serviceId}/toggle-status`, {

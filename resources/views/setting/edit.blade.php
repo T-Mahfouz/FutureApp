@@ -49,10 +49,14 @@
 					</div>
 					<div class="form-group col-12 col-md-6">
 						<label for="key">Setting Key</label>
-						<input type="text" class="form-control{{ $errors->has('key') ? ' is-invalid' : '' }}" value="{{ old('key', $setting->key) }}" id="key" name="key" placeholder="Enter setting key (e.g., site_title, contact_email)" required>
-						@if($errors->has('key'))
-							<div class="invalid-feedback">{{ $errors->first('key') }}</div>
-						@endif
+                        <select name="key" id="key" class="form-control{{ $errors->has('key') ? ' is-invalid' : '' }}">
+                            <option value="contact_us">Contact Us</option>
+                            <option value="about_us">About Us</option>
+                            <option value="privacy_policy">Privacy Policy</option>
+                            <option value="terms_conditions">Terms & Conditions</option>
+                            <option value="help">Help</option>
+                            <option value="faq">FAQ</option>
+                        </select>
 						<small class="form-text text-muted">Use snake_case format (e.g., site_title, footer_text)</small>
 					</div>
 				</div>

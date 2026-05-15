@@ -62,10 +62,10 @@ class ProfileController extends InitController
             
                 $imageId = $media->id ?? null;
 
-                if ($imageId) {
+                if ($user->image_id) {
                     deleteImage($user->image_id);
-                    $user->image_id = $imageId;
                 }
+                $user->image_id = $imageId;
             }
 
             // Update user fields

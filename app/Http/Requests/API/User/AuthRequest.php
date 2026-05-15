@@ -23,7 +23,8 @@ class AuthRequest extends ShapeRequest
     {
         return [
             'name' => 'required|min:2',
-            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:20|unique:users,phone',
+            'email' => 'nullable|email|unique:users,email',
             'city_id' => 'nullable|exists:cities,id',
             'password' => 'required|min:6|confirmed',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',

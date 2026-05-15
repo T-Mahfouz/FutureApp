@@ -134,17 +134,18 @@ class CityController extends Controller
     public function update(Request $request, City $city)
     {
         $this->ensureSuperAdmin();
+        
 
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255|unique:cities,name,' . ($city->id ?? 'NULL'),
-            'description' => 'nullable|string|max:1000',
+            // 'description' => 'nullable|string|max:1000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_active' => 'nullable|boolean',
         ];
 
         $request->validate($rules);
-
+        
         // Handle image upload
         $imageId = $city->image_id;
         if($request->hasFile('image')){
@@ -163,9 +164,9 @@ class CityController extends Controller
 
         // Update city fields
         $city->name = $request->input('name');
-        $city->description = $request->input('description');
+        // $city->description = $request->input('description');
         $city->image_id = $imageId;
-        $city->is_active = $request->input('is_active', false);
+        // $city->is_active = $request->input('is_active', false);
 
         $city->save();
 

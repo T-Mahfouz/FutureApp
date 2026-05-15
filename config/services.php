@@ -35,4 +35,29 @@ return [
         ],
     ],
 
+    'sms' => [
+        'url' => env('SMS_API_URL', 'https://smsmisr.com/api/SMS/'),
+        'environment' => env('SMS_ENVIRONMENT', '1'),
+        'sender' => env('SMS_SENDER'),
+        'username' => env('SMS_USERNAME'),
+        'password' => env('SMS_PASSWORD'),
+    ],
+
+    'beon' => [
+        'url' => env('BEON_API_URL', 'https://v3.api.beon.chat/api/v3'),
+        'token' => env('BEON_TOKEN'),
+    ],
+
+    'whatsapp' => [
+        'api_key' => env('WHATSAPP_API_KEY'),
+        'source_number' => env('WHATSAPP_SOURCE_NUMBER'),
+        'app_name' => env('WHATSAPP_APP_NAME', 'Future'),
+    ],
+
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID', 'dalel-75ad2'),
+        'server_key' => env('FIREBASE_SERVER_KEY'),
+        'credentials_file' => env('FIREBASE_CREDENTIALS_FILE', 'client_secret_google.json'),
+    ],
+
 ];

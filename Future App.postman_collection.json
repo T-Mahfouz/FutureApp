@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "3681d4ed-9168-454b-bb49-4010d77be96b",
+		"_postman_id": "d113add4-5b57-4fa5-9d4a-7474afcb1c7d",
 		"name": "Future App",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "2966772"
@@ -24,8 +24,8 @@
 							"mode": "formdata",
 							"formdata": [
 								{
-									"key": "email",
-									"value": "test@gmail.com",
+									"key": "phone",
+									"value": "01114254513",
 									"type": "text"
 								},
 								{
@@ -69,12 +69,12 @@
 								},
 								{
 									"key": "email",
-									"value": "test@gmail.com",
+									"value": "test2@gmail.com",
 									"type": "text"
 								},
 								{
 									"key": "phone",
-									"value": "",
+									"value": "0114254512",
 									"type": "text"
 								},
 								{
@@ -465,6 +465,89 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Filter Ads",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Tarek",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "tarek@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{localhost}}/ads/filter?location=all_locations&city_id=9",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"ads",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "location",
+									"value": "all_locations",
+									"description": "all_locations,service_profile,category_profile,home_down,home_up"
+								},
+								{
+									"key": "city_id",
+									"value": "9"
+								},
+								{
+									"key": "category_id",
+									"value": "122",
+									"disabled": true
+								},
+								{
+									"key": "service_id",
+									"value": "189",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -842,9 +925,9 @@
 							]
 						},
 						"url": {
-							"raw": "{{localhost}}/services/latest",
+							"raw": "{{server}}/services/latest",
 							"host": [
-								"{{localhost}}"
+								"{{server}}"
 							],
 							"path": [
 								"services",
@@ -885,23 +968,7 @@
 						],
 						"body": {
 							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "name",
-									"value": "Tarek",
-									"type": "text"
-								},
-								{
-									"key": "email",
-									"value": "tarek@gmail.com",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "123456",
-									"type": "text"
-								}
-							]
+							"formdata": []
 						},
 						"url": {
 							"raw": "{{localhost}}/services/city",
@@ -1036,6 +1103,260 @@
 							"path": [
 								"services",
 								"369"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request a Service",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": " Cairo Medical Center",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": " 123 Tahrir Square, Cairo, Egypt",
+									"type": "text"
+								},
+								{
+									"key": "brief_description",
+									"value": " Modern medical center providing comprehensive healthcare services",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": " Cairo Medical Center is a state-of-the-art facility offering a wide range of medical services including general medicine, cardiology, orthopedics, and emergency care. Our experienced doctors and modern equipment ensure the best healthcare for our patients.",
+									"type": "text"
+								},
+								{
+									"key": "lat",
+									"value": " 30.0444",
+									"type": "text"
+								},
+								{
+									"key": "lon",
+									"value": " 31.2357",
+									"type": "text"
+								},
+								{
+									"key": "website",
+									"value": " https://cairomediccenter.com",
+									"type": "text"
+								},
+								{
+									"key": "facebook",
+									"value": " https://facebook.com/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "whatsapp",
+									"value": " +201234567890",
+									"type": "text"
+								},
+								{
+									"key": "instagram",
+									"value": " https://instagram.com/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "telegram",
+									"value": " https://t.me/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "youtube",
+									"value": " https://youtube.com/cairomediccenter",
+									"type": "text"
+								},
+								{
+									"key": "video_link",
+									"value": " https://youtube.com/watch?v=example",
+									"type": "text"
+								},
+								{
+									"key": "category_ids[]",
+									"value": "69",
+									"type": "text"
+								},
+								{
+									"key": "category_ids[]",
+									"value": "120",
+									"type": "text"
+								},
+								{
+									"key": "category_ids[]",
+									"value": "185",
+									"type": "text"
+								},
+								{
+									"key": "phones[]",
+									"value": " +201234567890",
+									"type": "text"
+								},
+								{
+									"key": "phones[]",
+									"value": " +201234567891",
+									"type": "text"
+								},
+								{
+									"key": "phones[]",
+									"value": " +201234567892",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"src": "/D:/wamp64/www/future-new/public/storage/all_images/122705363c6d18b9f79c.png"
+								},
+								{
+									"key": "additional_images[]",
+									"type": "file",
+									"src": "/D:/wamp64/www/future-new/public/storage/all_images/196134966b1725e9021d.png"
+								},
+								{
+									"key": "additional_images[]",
+									"type": "file",
+									"src": "/D:/wamp64/www/future-new/public/storage/all_images/289869762ff75fae43ef.jpeg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{localhost}}/services/request",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"services",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "My Requested Services",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{server}}/services/my-requests",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"services",
+								"my-requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Rate Service",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "service_id",
+									"value": "1125",
+									"type": "text"
+								},
+								{
+									"key": "rate",
+									"value": "5",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{server}}/services/rate",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"services",
+								"rate"
 							]
 						}
 					},
@@ -1546,9 +1867,9 @@
 							]
 						},
 						"url": {
-							"raw": "{{localhost}}/settings/city?key=privacy_policy",
+							"raw": "{{server}}/settings/city?key=privacy_policy",
 							"host": [
-								"{{localhost}}"
+								"{{server}}"
 							],
 							"path": [
 								"settings",
@@ -1694,6 +2015,74 @@
 								{
 									"key": "key",
 									"value": "faq"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "City Contacts",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-City-ID",
+								"value": "9",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Tarek",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "tarek@gmail.com",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{localhost}}/settings/city?key=contacts",
+							"host": [
+								"{{localhost}}"
+							],
+							"path": [
+								"settings",
+								"city"
+							],
+							"query": [
+								{
+									"key": "key",
+									"value": "contacts"
 								}
 							]
 						}
@@ -2133,6 +2522,67 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Get Cities",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-City-ID",
+						"value": "9",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "Tarek",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "tarek@gmail.com",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "123456",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{localhost}}/cities",
+					"host": [
+						"{{localhost}}"
+					],
+					"path": [
+						"cities"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
@@ -2141,6 +2591,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -2151,6 +2602,7 @@
 			"script": {
 				"type": "text/javascript",
 				"packages": {},
+				"requests": {},
 				"exec": [
 					""
 				]
@@ -2160,18 +2612,23 @@
 	"variable": [
 		{
 			"key": "localhost",
-			"value": "http://localhost/future-new/public/api",
-			"type": "string"
+			"value": "http://localhost/future-new/public/api"
 		},
 		{
 			"key": "token",
-			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0L2Z1dHVyZS1uZXcvcHVibGljL2FwaS9hdXRoL2xvZ2luIiwiaWF0IjoxNzQ5ODE2MDEzLCJleHAiOjE3NDk4MTk2MTMsIm5iZiI6MTc0OTgxNjAxMywianRpIjoiampvTm4xZHE1TkVYTDR1MiIsInN1YiI6IjEwIiwicHJ2IjoiMjNiZDVjODk0OWY2MDBhZGIzOWU3MDFjNDAwODcyZGI3YTU5NzZmNyJ9.wWjtD-iAR9mWGOGoQ_zBOTXXYOWIMEe_ZCKVwgjHlzs",
-			"type": "string"
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0L2Z1dHVyZS1uZXcvcHVibGljL2FwaS9hdXRoL2xvZ2luIiwiaWF0IjoxNzQ5ODE2MDEzLCJleHAiOjE3NDk4MTk2MTMsIm5iZiI6MTc0OTgxNjAxMywianRpIjoiampvTm4xZHE1TkVYTDR1MiIsInN1YiI6IjEwIiwicHJ2IjoiMjNiZDVjODk0OWY2MDBhZGIzOWU3MDFjNDAwODcyZGI3YTU5NzZmNyJ9.wWjtD-iAR9mWGOGoQ_zBOTXXYOWIMEe_ZCKVwgjHlzs"
 		},
 		{
 			"key": "migration_route",
-			"value": "http://localhost/future-new/public/migration",
-			"type": "string"
+			"value": "http://localhost/future-new/public/migration"
+		},
+		{
+			"key": "server",
+			"value": "https://darkviolet-horse-137762.hostingersite.com/public/api"
+		},
+		{
+			"key": "serverToekn",
+			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2Rhcmt2aW9sZXQtaG9yc2UtMTM3NzYyLmhvc3RpbmdlcnNpdGUuY29tL3B1YmxpYy9hcGkvYXV0aC9sb2dpbiIsImlhdCI6MTc1MTYzMTI3OSwiZXhwIjoxNzUxNzE3Njc5LCJuYmYiOjE3NTE2MzEyNzksImp0aSI6InpMUklNMHdMaUdFMzlNbkUiLCJzdWIiOiIxNyIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.GCAB4rMTxg-bi-gROgYn0tJZhLBGaRjZQE6BxjXtoKw"
 		}
 	]
 }

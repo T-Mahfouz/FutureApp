@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AdController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\CityController;
 use App\Http\Controllers\API\ContactUsController;
 use App\Http\Controllers\API\FavoriteController;
 use App\Http\Controllers\API\NewsController;
@@ -31,31 +32,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-# Auth Routes
+# Auth Routes (public - no auth required)
 Route::group(['prefix' => 'auth'], function () {
-    # Login and Register
     Route::post('login', [AuthController::class, 'login'])->name('login');
     Route::post('register', [AuthController::class, 'register'])->name('register');
     Route::post('verify', [AuthController::class, 'verify'])->name('verify');
-    
-    # Uncomment and update other routes as needed
-    # Route::post('forget-password-request', [AuthController::class, 'forgetPasswordRequest'])->name('forget.password.request');
-    # Route::post('reset-password-login', [AuthController::class, 'resetWithLogin'])->name('reset.with.login');
-    
-    # Route::middleware('auth:api')->group(function() {
-    #     Route::post('send-verification-code', [AuthController::class, 'sendVerificationCode'])->name('send.verification-code');
-    #     Route::post('change-password', [AuthController::class, 'changePassword'])->name('change.password');
-    #     Route::get('logout', [AuthController::class, 'logout'])->name('logout');
-    # });
+    Route::post('resend-otp', [AuthController::class, 'resendOtp'])->name('resend.otp');
+    Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot.password');
+    Route::post('reset-password', [AuthController::class, 'resetPassword'])->name('reset.password');
 });
-
-// Route::middleware('auth:api')->group(function() {
-//     Route::prefix('ads')->group(function () {
-//         Route::get('/city', [AdController::class, 'getCityAds']);
-//         Route::post('/city', [AdController::class, 'getByCityId']);
-//     });
-// });
-
 
 // Configure rate limiting in RouteServiceProvider boot method
 RateLimiter::for('api', function (Request $request) {
@@ -64,20 +49,28 @@ RateLimiter::for('api', function (Request $request) {
 
 // Specific rate limiting for different endpoints
 RateLimiter::for('favorites', function (Request $request) {
-    return Limit::perMinute(10)->by($request->user()->id);
+    return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
 });
 
 RateLimiter::for('search', function (Request $request) {
-    return Limit::perMinute(30)->by($request->user()->id);
+    return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
 });
 
-Route::middleware(['auth:api', 'throttle:api'])->group(function() {
-    
+Route::get('cities', [CityController::class, 'index']);
+
+// Anonymous contact message (no auth required)
+Route::post('contact-us/send-anonymous', [ContactUsController::class, 'sendAnonymousMessage']);
+
+Route::middleware(['auth:api', 'verified.phone', 'throttle:api'])->group(function() {
+
+    Route::get('auth/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('auth/change-password', [AuthController::class, 'changePassword'])->name('change.password');
+
     // Ads Routes
     Route::prefix('ads')->group(function () {
         Route::get('/city', [AdController::class, 'getCityAds']);
         Route::get('/user-city', [AdController::class, 'getByCityId']);
-        Route::get('/location', [AdController::class, 'getAdsByLocation']); // Get ads by location type
+        Route::get('/filter', [AdController::class, 'getAdsWithFilter']); // Get ads by location type
     });
 
     // Categories Routes
@@ -95,6 +88,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function() {
 
     // Services Routes
     Route::prefix('services')->group(function () {
+        Route::post('/rate', [ServiceController::class, 'rate']); // Rate
         Route::get('/latest', [ServiceController::class, 'getLatestServices']); // Latest services
         Route::get('/city', [ServiceController::class, 'getCityServices']); // Bonus: All city services
         Route::get('/category/{categoryId}', [ServiceController::class, 'getServicesByCategory']); // Bonus: By category
@@ -139,11 +133,9 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function() {
     // Contact Us routes
     Route::prefix('contact-us')->group(function () {
         Route::post('/send', [ContactUsController::class, 'sendMessage']);
-        Route::post('/send-anonymous', [ContactUsController::class, 'sendAnonymousMessage']);
         Route::get('/my-messages', [ContactUsController::class, 'getMyMessages']);
         Route::get('/{id}', [ContactUsController::class, 'getMessageById']);
         Route::put('/{id}', [ContactUsController::class, 'updateMessage']);
-        Route::delete('/{id}', [ContactUsController::class, 'deleteMessage']);
         Route::delete('/{id}', [ContactUsController::class, 'deleteMessage']);
     });
 });

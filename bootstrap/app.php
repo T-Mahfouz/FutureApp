@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use App\Http\Middleware\EnsureUserIsVerified;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,22 +21,25 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'verified.phone' => EnsureUserIsVerified::class,
+        ]);
         // $middleware->group('api', [
         //     \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         //     \Illuminate\Routing\Middleware\SubstituteBindings::class,
         // ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-            
+
         $exceptions->render(function (ThrottleRequestsException $e, $request) {
             $retryAfter = $e->getHeaders()['Retry-After'] ?? null;
             $rateLimitLimit = $e->getHeaders()['X-RateLimit-Limit'] ?? null;
-            
+
             // For API requests (JSON expected)
             if ($request->expectsJson() || $request->is('api/*')) {
 
-                return jsonResponse(429, 
-                'You have exceeded the allowed number of requests. Please slow down and try again later.',
+                return jsonResponse(429,
+                    'You have exceeded the allowed number of requests. Please slow down and try again later.',
                     [
                         'Retry-After' => $retryAfter,
                         'X-RateLimit-Limit' => $rateLimitLimit,
@@ -53,7 +57,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->withInput()
                 ->with('throttle_error', true);
         });
-        
+
     })->create();
 
-    

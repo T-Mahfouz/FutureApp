@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Resources\API\CityContactsResource;
 use App\Http\Resources\API\SettingResource;
+use App\Models\ContactUs;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -27,7 +29,7 @@ class SettingController extends InitController
     {
         // Validation
         $validator = Validator::make($request->all(), [
-            'key' => 'required|string|in:contact_us,about_us,privacy_policy,terms_conditions,help,faq',
+            'key' => 'required|string|in:contacts,about_us,privacy_policy,terms_conditions,help,faq',
         ]);
 
         if ($validator->fails()) {
@@ -51,31 +53,13 @@ class SettingController extends InitController
                 'settings' => SettingResource::collection($settings),
             ];
 
-            // Special handling for contact_us - append city contacts
-            // if ($key === 'contact_us') {
-            //     $this->pipeline->setModel('ContactUs');
-            //     $cityContacts = $this->pipeline->where('city_id', $this->user->city_id)
-            //         ->with('user')
-            //         ->orderBy('created_at', 'desc')
-            //         ->limit(10) // Limit to recent contacts for privacy
-            //         ->get()
-            //         ->map(function ($contact) {
-            //             return [
-            //                 'id' => $contact->id,
-            //                 'name' => $contact->name,
-            //                 'phone' => $contact->phone,
-            //                 'message' => $contact->message,
-            //                 'is_read' => $contact->is_read,
-            //                 'user' => $contact->user ? [
-            //                     'id' => $contact->user->id,
-            //                     'name' => $contact->user->name,
-            //                 ] : null,
-            //                 'created_at' => $contact->created_at?->format('Y-m-d H:i:s'),
-            //             ];
-            //         });
-
-            //     $responseData['city_contacts'] = $cityContacts;
-            // }
+            # Special handling for contacts
+            if ($key === 'contacts') {
+                $this->pipeline->setModel('Contact');
+                $settings = $this->pipeline->where('city_id', $this->user->city_id)->pluck('value', 'name')->unique();
+                
+                $responseData = $settings;
+            }
 
             // Check if any settings found
             if ($settings->isEmpty()) {
@@ -85,7 +69,7 @@ class SettingController extends InitController
             return jsonResponse(200, 'Settings retrieved successfully.', $responseData);
 
         } catch (\Exception $e) {
-            return jsonResponse(500, 'Failed to retrieve settings. Please try again.');
+            return jsonResponse(500, 'Failed to retrieve settings. Please try again.'. $e->getMessage());
         }
     }
 
