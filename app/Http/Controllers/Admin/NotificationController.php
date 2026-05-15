@@ -141,9 +141,8 @@ class NotificationController extends Controller
                    ->get();
 
         $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
-        $categories = Category::whereIn('city_id', $accessibleCityIds)->orderBy('name')->get();
 
-        return view('notification.edit', compact('notification', 'services', 'news', 'cities', 'categories'));
+        return view('notification.edit', compact('notification', 'services', 'news', 'cities'));
     }
 
     // Show the form for editing the specified notification
@@ -170,9 +169,8 @@ class NotificationController extends Controller
                    ->get();
 
         $cities = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
-        $categories = Category::whereIn('city_id', $accessibleCityIds)->orderBy('name')->get();
 
-        return view('notification.edit', compact('notification', 'cities', 'services', 'news', 'categories'));
+        return view('notification.edit', compact('notification', 'cities', 'services', 'news'));
     }
 
     // Save a newly created notification
@@ -764,6 +762,45 @@ class NotificationController extends Controller
         return response()->json([
             'success' => true,
             'services' => $services
+        ]);
+    }
+
+    /**
+     * AJAX: Get categories by city IDs
+     */
+    public function getCategoriesByCities(Request $request)
+    {
+        $cityIds = $request->input('city_ids', []);
+
+        if (empty($cityIds)) {
+            return response()->json([
+                'success' => true,
+                'categories' => []
+            ]);
+        }
+
+        if (!is_array($cityIds)) {
+            $cityIds = [$cityIds];
+        }
+
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        $allowedCityIds = array_intersect($cityIds, $accessibleCityIds);
+
+        $categories = Category::whereIn('city_id', $allowedCityIds)
+            ->with('city')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'city_name' => $category->city ? $category->city->name : 'N/A',
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'categories' => $categories
         ]);
     }
 

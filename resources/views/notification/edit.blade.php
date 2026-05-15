@@ -125,12 +125,9 @@
 					<div class="form-group col-12 col-md-4">
 						<label for="category_filter">Filter by Category</label>
 						<select class="form-control" id="category_filter">
-							<option value="">All Categories</option>
-							@foreach($categories as $category)
-								<option value="{{ $category->id }}">{{ $category->name }}</option>
-							@endforeach
+							<option value="">Select cities first</option>
 						</select>
-						<small class="form-text text-muted">Filter services by category (optional)</small>
+						<small class="form-text text-muted">Filter services by category (optional). Categories are bound to selected cities.</small>
 					</div>
 					<div class="form-group col-12 col-md-8">
 						<label for="service_id">Select Service</label>
@@ -229,9 +226,10 @@ $(document).ready(function() {
     const currentServiceId = {{ old('service_id', $notification->service_id) ?? 'null' }};
     const currentNewsId = {{ old('news_id', $notification->news_id) ?? 'null' }};
 
-    // Load services and news on page load if cities are already selected
+    // Load services, news, and categories on page load if cities are already selected
     if (citySelect.val() && citySelect.val().length > 0) {
         loadServicesAndNews(citySelect.val());
+        loadCategories(citySelect.val());
     }
 
     // Handle city change
@@ -240,17 +238,19 @@ $(document).ready(function() {
 
         console.log('Cities changed to:', cityIds);
 
-        // Reset category filter when cities change
         categoryFilter.val('');
 
         if (!cityIds || cityIds.length === 0) {
             serviceSelect.html('<option value="">Select cities first</option>');
             newsSelect.html('<option value="">Select cities first</option>');
+            categoryFilter.html('<option value="">Select cities first</option>');
             serviceSelect.prop('disabled', true);
             newsSelect.prop('disabled', true);
+            categoryFilter.prop('disabled', true);
             return;
         }
 
+        loadCategories(cityIds);
         loadServicesAndNews(cityIds);
     });
 
@@ -268,6 +268,47 @@ $(document).ready(function() {
 
         // Load news
         loadNews(cityIds);
+    }
+
+    function loadCategories(cityIds) {
+        categoryFilter.prop('disabled', true);
+        categoryFilter.html('<option value="">Loading categories...</option>');
+
+        const url = '{{ route("notification.getCategoriesByCities") }}';
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            data: { city_ids: cityIds },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            success: function(data) {
+                categoryFilter.html('<option value="">All Categories</option>');
+
+                if (data.categories && data.categories.length > 0) {
+                    $.each(data.categories, function(index, category) {
+                        const label = cityIds.length > 1
+                            ? category.name + ' (' + category.city_name + ')'
+                            : category.name;
+                        const option = $('<option></option>')
+                            .val(category.id)
+                            .text(label);
+                        categoryFilter.append(option);
+                    });
+                } else {
+                    categoryFilter.html('<option value="">No categories available for selected cities</option>');
+                }
+
+                categoryFilter.prop('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching categories:', error);
+                categoryFilter.html('<option value="">Error loading categories</option>');
+                categoryFilter.prop('disabled', false);
+            }
+        });
     }
 
     function loadServices(cityIds) {
