@@ -252,8 +252,8 @@ if (!function_exists('generateCode')) {
 }
 
 
-if (!function_exists('sendSMS')) {
-    function sendSMS($to, $message) {
+if (!function_exists('sendSMSMessage')) {
+    function sendSMSMessage($to, $message) {
         $to = str_replace('+2', '', $to);
 
         $smsConfig = config('services.sms');

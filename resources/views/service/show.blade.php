@@ -459,10 +459,18 @@
 			</div>
 			<div class="card-body">
 				@foreach($ratings as $rate)
-				<div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+				<div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom" id="rate-row-{{ $rate->id }}">
 					<div class="d-flex align-items-center">
-						@if($rate->user && $rate->user->image && $rate->user->image->path)
-							<img src="{{ asset('storage/' . $rate->user->image->path) }}" alt="{{ $rate->user->name }}" class="rounded-circle mr-3" width="48" height="48" style="object-fit: cover;">
+						@if($rate->user)
+							<a href="{{ route('user.show', $rate->user) }}" title="View {{ $rate->user->name }}'s info">
+								@if($rate->user->image && $rate->user->image->path)
+									<img src="{{ asset('storage/' . $rate->user->image->path) }}" alt="{{ $rate->user->name }}" class="rounded-circle mr-3" width="48" height="48" style="object-fit: cover;">
+								@else
+									<div class="rounded-circle mr-3 bg-light d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+										<i class="gd-user text-muted"></i>
+									</div>
+								@endif
+							</a>
 						@else
 							<div class="rounded-circle mr-3 bg-light d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
 								<i class="gd-user text-muted"></i>
@@ -476,18 +484,21 @@
 							<small class="text-muted">{{ $rate->created_at->format('M d, Y \a\t g:i:s A') }}</small>
 						</div>
 					</div>
-					<div class="text-warning">
-						@for($i = 1; $i <= 5; $i++)
-							{{ $i <= $rate->rate ? '★' : '☆' }}
-						@endfor
-						<span class="text-muted ml-1">({{ $rate->rate }}/5)</span>
+					<div class="d-flex align-items-center">
+						<div class="text-warning mr-3">
+							@for($i = 1; $i <= 5; $i++)
+								{{ $i <= $rate->rate ? '★' : '☆' }}
+							@endfor
+							<span class="text-muted ml-1">({{ $rate->rate }}/5)</span>
+						</div>
+						<button type="button" class="btn btn-outline-danger btn-sm" title="Delete this rating" onclick="deleteRate({{ $service->id }}, {{ $rate->id }})">
+							<i class="gd-trash"></i>
+						</button>
 					</div>
 				</div>
 				@endforeach
 
-				<div class="d-flex justify-content-center mt-3">
-					{{ $ratings->links() }}
-				</div>
+				{{ $ratings->links('components.pagination') }}
 			</div>
 		</div>
 		@endif
@@ -518,9 +529,7 @@
 				</div>
 				@endforeach
 
-				<div class="d-flex justify-content-center mt-3">
-					{{ $favorites->links() }}
-				</div>
+				{{ $favorites->links('components.pagination') }}
 			</div>
 		</div>
 		@endif
@@ -556,6 +565,38 @@ function approveService(serviceId) {
 			}
 		});
     }
+}
+
+function deleteRate(serviceId, rateId) {
+    if(!confirm('Are you sure you want to delete this rating? This action cannot be undone.')) {
+        return;
+    }
+
+    let url = `{{ url('') }}/services/${serviceId}/rates/${rateId}`;
+
+    $.ajax({
+        url: url,
+        type: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        contentType: 'application/json',
+        dataType: 'json',
+        success: function(data) {
+            if(data.success) {
+                $('#rate-row-' + rateId).fadeOut(200, function() { $(this).remove(); });
+            } else {
+                alert(data.message || 'Error deleting rating');
+            }
+        },
+        error: function(xhr) {
+            let message = 'Error deleting rating';
+            if(xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            alert(message);
+        }
+    });
 }
 
 function resetRatings(serviceId) {

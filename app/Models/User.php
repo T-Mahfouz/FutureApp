@@ -23,6 +23,8 @@ class User extends Authenticatable implements JWTSubject
         'is_verified',
         'otp_code',
         'otp_expires_at',
+        'blocked',
+        'block_reason',
     ];
 
     /**
@@ -78,6 +80,7 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'is_verified' => 'boolean',
             'otp_expires_at' => 'datetime',
+            'blocked' => 'boolean',
         ];
     }
 

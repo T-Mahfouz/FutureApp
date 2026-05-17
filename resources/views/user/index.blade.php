@@ -157,6 +157,9 @@
 					<td class="py-3">{{ $user->created_at->diffForHumans() }}</td>
 					<td class="py-3">
 						<div class="position-relative">
+							<a class="link-dark d-inline-block mr-2" href="{{ route('user.show', $user) }}" title="View User Info">
+								<i class="gd-eye icon-text"></i>
+							</a>
 							<a class="link-dark d-inline-block mr-2" href="{{ route('user.edit', $user) }}" title="Edit User">
 								<i class="gd-pencil icon-text"></i>
 							</a>

@@ -9,6 +9,7 @@ use App\Models\Service;
 use App\Models\City;
 use App\Models\Category;
 use App\Models\Media;
+use App\Models\Rate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -485,6 +486,219 @@ class ServiceController extends Controller
         return response()->json([
             'success' => true,
             'message' => "{$deletedCount} rating(s) have been reset successfully."
+        ]);
+    }
+
+    /**
+     * Suspicious ratings: same user gives a high rating to one service AND a low
+     * rating to a competitor (same city, overlapping category) within a window.
+     * Results are grouped by user with per-user stats, charts, and explanations.
+     */
+    public function suspiciousRatings(Request $request)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+
+        $highThreshold = max(1, min(5, (int) $request->get('high', 4)));
+        $lowThreshold  = max(1, min(5, (int) $request->get('low', 2)));
+        $windowDays    = max(1, min(365, (int) $request->get('window', 7)));
+        $cityFilter    = $request->get('city_id');
+        $phoneSearch   = trim((string) $request->get('phone', ''));
+        $dateFrom      = $request->get('date_from');
+        $dateTo        = $request->get('date_to');
+
+        $fromTs = $dateFrom ? Carbon::parse($dateFrom)->startOfDay() : null;
+        $toTs   = $dateTo   ? Carbon::parse($dateTo)->endOfDay()   : null;
+
+        $candidates = \App\Models\User::query()
+            ->when($phoneSearch !== '', function ($q) use ($phoneSearch) {
+                $q->where('phone', 'like', '%' . $phoneSearch . '%');
+            })
+            ->whereHas('rates', function ($q) use ($highThreshold, $accessibleCityIds, $cityFilter, $fromTs, $toTs) {
+                $q->where('rate', '>=', $highThreshold)
+                  ->whereHas('service', function ($sq) use ($accessibleCityIds, $cityFilter) {
+                      $sq->whereIn('city_id', $accessibleCityIds);
+                      if ($cityFilter) $sq->where('city_id', $cityFilter);
+                  });
+                if ($fromTs) $q->where('created_at', '>=', $fromTs);
+                if ($toTs)   $q->where('created_at', '<=', $toTs);
+            })
+            ->whereHas('rates', function ($q) use ($lowThreshold, $accessibleCityIds, $cityFilter, $fromTs, $toTs) {
+                $q->where('rate', '<=', $lowThreshold)
+                  ->whereHas('service', function ($sq) use ($accessibleCityIds, $cityFilter) {
+                      $sq->whereIn('city_id', $accessibleCityIds);
+                      if ($cityFilter) $sq->where('city_id', $cityFilter);
+                  });
+                if ($fromTs) $q->where('created_at', '>=', $fromTs);
+                if ($toTs)   $q->where('created_at', '<=', $toTs);
+            })
+            ->with(['rates.service.categories', 'rates.service.city', 'image', 'city'])
+            ->get();
+
+        $groups = [];
+        foreach ($candidates as $user) {
+            $relevantRates = $user->rates->filter(function ($r) use ($accessibleCityIds, $cityFilter, $fromTs, $toTs) {
+                if (!$r->service) return false;
+                if (!in_array($r->service->city_id, $accessibleCityIds)) return false;
+                if ($cityFilter && $r->service->city_id != $cityFilter) return false;
+                if ($fromTs && $r->created_at->lt($fromTs)) return false;
+                if ($toTs   && $r->created_at->gt($toTs))   return false;
+                return true;
+            });
+            $highs = $relevantRates->where('rate', '>=', $highThreshold);
+            $lows  = $relevantRates->where('rate', '<=', $lowThreshold);
+
+            $userPairs = [];
+            foreach ($highs as $high) {
+                foreach ($lows as $low) {
+                    if ($high->service_id === $low->service_id) continue;
+                    if ($high->service->city_id !== $low->service->city_id) continue;
+                    if (abs($high->created_at->diffInDays($low->created_at)) > $windowDays) continue;
+
+                    $shared = $high->service->categories->pluck('id')
+                        ->intersect($low->service->categories->pluck('id'));
+                    if ($shared->isEmpty()) continue;
+
+                    $userPairs[] = [
+                        'high'        => $high,
+                        'low'         => $low,
+                        'categories'  => $high->service->categories->whereIn('id', $shared),
+                        'city'        => $high->service->city,
+                        'days'        => abs($high->created_at->diffInDays($low->created_at)),
+                    ];
+                }
+            }
+
+            if (empty($userPairs)) continue;
+
+            $allRates = $user->rates->filter(function ($r) use ($accessibleCityIds) {
+                return $r->service && in_array($r->service->city_id, $accessibleCityIds);
+            });
+
+            $distribution = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+            foreach ($allRates as $r) {
+                if (isset($distribution[$r->rate])) $distribution[$r->rate]++;
+            }
+
+            $totalRates = $allRates->count();
+            $highCount  = $allRates->where('rate', '>=', $highThreshold)->count();
+            $lowCount   = $allRates->where('rate', '<=', $lowThreshold)->count();
+            $avgRate    = $totalRates > 0 ? round($allRates->avg('rate'), 2) : 0;
+
+            $latestSuspicious = 0;
+            foreach ($userPairs as $p) {
+                $latestSuspicious = max($latestSuspicious, $p['high']->created_at->timestamp, $p['low']->created_at->timestamp);
+            }
+
+            $affectedCities = collect($userPairs)->pluck('city.name')->filter()->unique()->values();
+            $affectedCategories = collect($userPairs)
+                ->flatMap(function ($p) { return $p['categories']->pluck('name'); })
+                ->filter()->unique()->values();
+
+            $groups[] = [
+                'user'                => $user,
+                'pairs'               => $userPairs,
+                'distribution'        => $distribution,
+                'total_rates'         => $totalRates,
+                'high_count'          => $highCount,
+                'low_count'           => $lowCount,
+                'avg_rate'            => $avgRate,
+                'pair_count'          => count($userPairs),
+                'latest_suspicious'   => $latestSuspicious,
+                'affected_cities'     => $affectedCities,
+                'affected_categories' => $affectedCategories,
+            ];
+        }
+
+        usort($groups, function ($a, $b) {
+            return [$b['pair_count'], $b['latest_suspicious']] <=> [$a['pair_count'], $a['latest_suspicious']];
+        });
+
+        $cities  = City::whereIn('id', $accessibleCityIds)->orderBy('name')->get();
+        $filters = compact('highThreshold', 'lowThreshold', 'windowDays', 'cityFilter', 'phoneSearch', 'dateFrom', 'dateTo');
+
+        if ($request->routeIs('service.suspicious-vendors')) {
+            $vendorMap = [];
+            foreach ($groups as $g) {
+                foreach ($g['pairs'] as $p) {
+                    $sid = $p['high']->service_id;
+                    if (!isset($vendorMap[$sid])) {
+                        $vendorMap[$sid] = [
+                            'service'     => $p['high']->service,
+                            'pair_count'  => 0,
+                            'raters'      => [],
+                            'competitors' => [],
+                        ];
+                    }
+                    $vendorMap[$sid]['pair_count']++;
+                    $vendorMap[$sid]['raters'][$g['user']->id] = $g['user'];
+                    $vendorMap[$sid]['competitors'][$p['low']->service_id] = $p['low']->service;
+                }
+            }
+
+            $vendors = array_values($vendorMap);
+            usort($vendors, function ($a, $b) {
+                return [$b['pair_count'], count($b['raters'])] <=> [$a['pair_count'], count($a['raters'])];
+            });
+
+            $perPage = 15;
+            $page    = max(1, (int) $request->get('page', 1));
+            $total   = count($vendors);
+            $slice   = array_slice($vendors, ($page - 1) * $perPage, $perPage);
+
+            $vendors = new \Illuminate\Pagination\LengthAwarePaginator(
+                $slice,
+                $total,
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+
+            return view('service.suspicious-vendors', compact('vendors', 'cities', 'filters'));
+        }
+
+        $perPage = 5;
+        $page    = max(1, (int) $request->get('page', 1));
+        $total   = count($groups);
+        $slice   = array_slice($groups, ($page - 1) * $perPage, $perPage);
+
+        $groups = new \Illuminate\Pagination\LengthAwarePaginator(
+            $slice,
+            $total,
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('service.suspicious-ratings', compact('groups', 'cities', 'filters'));
+    }
+
+    public function suspiciousVendors(Request $request)
+    {
+        return $this->suspiciousRatings($request);
+    }
+
+    public function deleteRate(Service $service, Rate $rate)
+    {
+        $accessibleCityIds = $this->getAccessibleCityIds();
+        if (!in_array($service->city_id, $accessibleCityIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify this service.'
+            ], 403);
+        }
+
+        if ($rate->service_id !== $service->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This rating does not belong to the given service.'
+            ], 404);
+        }
+
+        $rate->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rating deleted successfully.'
         ]);
     }
 

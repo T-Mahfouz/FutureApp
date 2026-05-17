@@ -49,10 +49,14 @@ Route::group(['middleware' => 'auth:admin'], function () {
 
     // Users
     Route::get('/users', [UserController::class, 'index'])->name('user.index');
+    Route::get('/users/blocked', [UserController::class, 'blocked'])->name('user.blocked');
     Route::get('/users/create', [UserController::class, 'create'])->name('user.create');
     Route::post('/users/create', [UserController::class, 'store'])->name('user.store');
-    Route::get('/users/{user}', [UserController::class, 'edit'])->name('user.edit');
+    Route::get('/users/{user}', [UserController::class, 'show'])->name('user.show');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
     Route::patch('/users/{user}', [UserController::class, 'update'])->name('user.update');
+    Route::post('/users/{user}/block', [UserController::class, 'block'])->name('user.block');
+    Route::post('/users/{user}/unblock', [UserController::class, 'unblock'])->name('user.unblock');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('user.destroy');
 
     // Admins
@@ -78,6 +82,8 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::post('/services/create', [ServiceController::class, 'store'])->name('service.store');
 
     Route::get('/services/ajax/parent-by-city', [ServiceController::class, 'getParentServicesByCityId'])->name('service.getParentServicesByCityId');
+    Route::get('/services/suspicious-ratings', [ServiceController::class, 'suspiciousRatings'])->name('service.suspicious-ratings');
+    Route::get('/services/suspicious-vendors', [ServiceController::class, 'suspiciousVendors'])->name('service.suspicious-vendors');
 
     Route::get('/services/{service}', [ServiceController::class, 'show'])->name('service.show');
     Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('service.edit');
@@ -85,6 +91,7 @@ Route::group(['middleware' => 'auth:admin'], function () {
     Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('service.destroy');
     Route::post('/services/{service}/toggle-status', [ServiceController::class, 'toggleStatus'])->name('service.toggle-status');
     Route::post('/services/{service}/reset-ratings', [ServiceController::class, 'resetRatings'])->name('service.reset-ratings');
+    Route::delete('/services/{service}/rates/{rate}', [ServiceController::class, 'deleteRate'])->name('service.delete-rate');
 
     Route::post('/services/bulk-destroy', [ServiceController::class, 'bulkDestroy'])->name('service.bulk-destroy');
     Route::post('/services/bulk-toggle-status', [ServiceController::class, 'bulkToggleStatus'])->name('service.bulk-toggle-status');

@@ -15,12 +15,12 @@
 		</a>
 	</li>
 	<!-- End Dashboard -->
-	
+
 	@php
 		$adminHasCityAssignments = Auth::guard('admin')->user()->cities()->count() > 0;
 		$isSuperAdmin = !$adminHasCityAssignments;
 	@endphp
-	
+
 	@if($isSuperAdmin)
 	<!-- Analytics - Only for Super Admins -->
 	<li class="side-nav-menu-item {{ Request::is('analytics*') ? 'active' : '' }}">
@@ -36,7 +36,7 @@
 	<!-- Title - Administration (Only for Super Admins) -->
 	<li class="sidebar-heading h6">Administration</li>
 	<!-- End Title -->
-	
+
 	<!-- Admins -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('admin*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="#"
@@ -63,11 +63,11 @@
 		<!-- Admins: sub -->
 	</li>
 	<!-- End Admins -->
-	
+
 	<!-- Title - Users (Only for Super Admins) -->
 	<li class="sidebar-heading h6">Users</li>
 	<!-- End Title -->
-	
+
 	<!-- Users -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('user*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="#"
@@ -87,6 +87,9 @@
 		<li class="side-nav-menu-item {{ Request::is('user') && !Request::is('user/create') ? 'active' : '' }}">
 			<a class="side-nav-menu-link" href="{{ route('user.index') }}">All Users</a>
 		</li>
+		<li class="side-nav-menu-item {{ Request::is('users/blocked') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('user.blocked') }}">Blocked Users</a>
+		</li>
 		<li class="side-nav-menu-item {{ Request::is('user/create') ? 'active' : '' }}">
 			<a class="side-nav-menu-link" href="{{ route('user.create') }}">Add User</a>
 		</li>
@@ -94,11 +97,11 @@
 		<!-- Users: sub -->
 	</li>
 	<!-- End Users -->
-	
+
 	<!-- Title - System Management (Only for Super Admins) -->
 	<li class="sidebar-heading h6">System Management</li>
 	<!-- End Title -->
-	
+
 	<!-- Cities -->
 	<li class="side-nav-menu-item side-nav-has-menu {{ Request::is('city*') || Request::is('cities*') ? 'active' : '' }}">
 		<a class="side-nav-menu-link media align-items-center" href="#"
@@ -150,6 +153,12 @@
 		<li class="side-nav-menu-item {{ (Request::is('service') || Request::is('services')) && !Request::is('service/create') && !Request::is('services/create') ? 'active' : '' }}">
 			<a class="side-nav-menu-link" href="{{ route('service.index') }}">All Services</a>
 		</li>
+		{{-- <li class="side-nav-menu-item {{ Request::is('services/suspicious-ratings') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('service.suspicious-ratings') }}">Suspicious Ratings</a>
+		</li>
+		<li class="side-nav-menu-item {{ Request::is('services/suspicious-vendors') ? 'active' : '' }}">
+			<a class="side-nav-menu-link" href="{{ route('service.suspicious-vendors') }}">Suspicious Vendors</a>
+		</li> --}}
 		<li class="side-nav-menu-item {{ Request::is('service/create') || Request::is('services/create') ? 'active' : '' }}">
 			<a class="side-nav-menu-link" href="{{ route('service.create') }}">Add Service</a>
 		</li>
@@ -319,7 +328,7 @@
 	<!-- City Admin Info Section -->
 	<li class="sidebar-heading h6">My Cities</li>
 	<!-- End Title -->
-	
+
 	@foreach(Auth::guard('admin')->user()->cities as $city)
 	<li class="side-nav-menu-item">
 		<a class="side-nav-menu-link media align-items-center" href="{{ route('dashboard.city', $city->id) }}">

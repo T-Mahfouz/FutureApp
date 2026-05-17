@@ -61,7 +61,7 @@ Route::get('cities', [CityController::class, 'index']);
 // Anonymous contact message (no auth required)
 Route::post('contact-us/send-anonymous', [ContactUsController::class, 'sendAnonymousMessage']);
 
-Route::middleware(['auth:api', 'verified.phone', 'throttle:api'])->group(function() {
+Route::middleware(['auth:api', 'verified.phone', 'active', 'throttle:api'])->group(function() {
 
     Route::get('auth/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('auth/change-password', [AuthController::class, 'changePassword'])->name('change.password');
@@ -92,10 +92,10 @@ Route::middleware(['auth:api', 'verified.phone', 'throttle:api'])->group(functio
         Route::get('/latest', [ServiceController::class, 'getLatestServices']); // Latest services
         Route::get('/city', [ServiceController::class, 'getCityServices']); // Bonus: All city services
         Route::get('/category/{categoryId}', [ServiceController::class, 'getServicesByCategory']); // Bonus: By category
-        
+
         Route::post('/request', [ServiceController::class, 'requestService'])->name('service.request');
         Route::get('/my-requests', [ServiceController::class, 'getMyServiceRequests'])->name('service.request.show');
-        
+
         Route::get('/{id}', [ServiceController::class, 'getServiceById'])->name('service.show'); // Bonus: Single service
     });
 

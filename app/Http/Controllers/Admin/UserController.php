@@ -8,9 +8,11 @@ use App\Models\User;
 use App\Models\City;
 use Illuminate\Support\Facades\Storage; // NEW: Add Storage facade
 
+use function Pest\Laravel\get;
+
 class UserController extends Controller
 {
-	
+
 	// Show all users
     public function index(Request $request)
     {
@@ -45,7 +47,7 @@ class UserController extends Controller
 
 		return view('user.index', compact('users', 'cities'));
     }
-	
+
 	// Show the form to create new user
     public function create()
     {
@@ -53,19 +55,30 @@ class UserController extends Controller
         $cities = City::orderBy('name')->get();
         return view('user.edit', compact('user', 'cities'));
     }
-	
+
+    // Show the user info page (read-only with rating analysis)
+    public function show(User $user){
+        $ratings = $user->rates()
+            ->with(['service.categories', 'service.city'])
+            ->latest()
+            ->paginate(15, ['*'], 'ratings_page')
+            ->withQueryString();
+
+        return view('user.show', compact('user', 'ratings'));
+    }
+
     // Show the form for editing the specified user
     public function edit(User $user){
         $cities = City::orderBy('name')->get();
         return view('user.edit', compact('user', 'cities'));
     }
-	
+
     // Save a newly created user
     public function store(Request $request){
         $user = new User();
         return $this->update($request, $user);
     }
-    
+
     // Update the specified user
     public function update(Request $request, User $user){
         // Base validation rules
@@ -99,15 +112,15 @@ class UserController extends Controller
         }
 
         $request->validate($rules);
-        
+
         $imageId = $user->image_id;
         if($request->hasFile('image')){
             $image = $request->file('image');
-            
+
             $media = resizeImage($image, $this->storagePath);
-            
+
             $imageId = $media->id ?? null;
-            
+
             if($imageId && $user->image_id && $user->image){
                 Storage::disk('public')->delete($user->image->path);
             }
@@ -124,15 +137,63 @@ class UserController extends Controller
         if($request->input('password')){
             $user->password = bcrypt($request->input('password'));
         }
-		
+
         $message = $user->id ? 'User has been updated successfully' : 'User has been created successfully';
         $user->save();
-		
+
         return redirect()
             ->route('user.index')
             ->with('status', $message);
     }
-	
+
+    // Show all blocked users
+    public function blocked(Request $request)
+    {
+        $query = User::with(['city', 'image'])->where('blocked', true);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('phone', 'like', '%' . $search . '%')
+                  ->orWhere('block_reason', 'like', '%' . $search . '%');
+            });
+        }
+
+        $users = $query->latest('updated_at')->paginate(25)->appends($request->query());
+
+        return view('user.blocked', compact('users'));
+    }
+
+    // Block a user
+    public function block(Request $request, User $user)
+    {
+        if ($user->id == auth()->user()->id) {
+            return redirect()->back()->with('error', 'You cannot block yourself.');
+        }
+
+        $request->validate([
+            'block_reason' => 'required|string|max:255',
+        ]);
+
+        $user->blocked = true;
+        $user->block_reason = $request->input('block_reason');
+        $user->save();
+
+        return redirect()->back()->with('status', "User '{$user->name}' has been blocked.");
+    }
+
+    // Unblock a user
+    public function unblock(User $user)
+    {
+        $user->blocked = false;
+        $user->block_reason = null;
+        $user->save();
+
+        return redirect()->back()->with('status', "User '{$user->name}' has been unblocked.");
+    }
+
     // Delete the specified user
     public function destroy(User $user)
     {
@@ -147,10 +208,10 @@ class UserController extends Controller
             }
             $user->image->delete();
         }
-		
+
         $user->delete();
         return redirect()
             ->route('user.index')->with('status', 'User has been deleted successfully');
     }
-	
+
 }
